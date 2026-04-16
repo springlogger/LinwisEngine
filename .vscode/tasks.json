@@ -1,0 +1,53 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build-engine",
+      "type": "shell",
+      "command": "C:/Program1/c++/msys64/ucrt64/bin/g++.exe",
+      "args": [
+        "-std=c++17",
+        "-Wall",
+        "-Wextra",
+        "-g",
+
+        "${workspaceFolder}/engine/*.cpp",
+        "${workspaceFolder}/math/*.cpp",
+        "${workspaceFolder}/platform/win32/Win32Main.cpp",
+        "${workspaceFolder}/platform/win32/Win32Window.cpp",
+
+        "-I", "${workspaceFolder}/headers",
+        "-I", "${workspaceFolder}/platform/win32",
+        "-I", "${workspaceFolder}/platform/win32/headers",
+
+        "-lgdi32",
+
+        "-o",
+        "${workspaceFolder}/platform/win32/output/Win32Main.exe"
+      ],
+      "options": {
+        "shell": {
+          "executable": "cmd.exe",
+          "args": ["/d", "/c"]
+        }
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "run-engine",
+      "type": "shell",
+      "command": "${workspaceFolder}/platform/win32/output/Win32Main.exe",
+      "dependsOn": "build-engine",
+      "options": {
+        "shell": {
+          "executable": "cmd.exe",
+          "args": ["/d", "/c"]
+        }
+      }
+    }
+  ]
+}
