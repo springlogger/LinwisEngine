@@ -5,6 +5,7 @@ A small C++17 console renderer that draws a rotating wireframe cube in the Windo
 ## Project layout
 
 - `LinwisEngine.cpp` - demo application entry point.
+- `platform` - platform specified code
 - `headers/` - public engine and math interfaces.
 - `engine/` - camera, renderer, and scene object implementations.
 - `math/` - vector, matrix, plane, quaternion, and helper math code.
@@ -17,7 +18,7 @@ The VS Code task builds the demo with `g++` and writes the executable to `output
 Equivalent command:
 
 ```powershell
-g++ -std=c++17 -Wall -Wextra -Iheaders LinwisEngine.cpp engine/*.cpp math/*.cpp -o output/LinwisEngine.exe
+g++ -std=c++17 -Wall -Wextra -I headers -I platform/win32/headers LinwisEngine.cpp engine/*.cpp math/*.cpp platform/win32/*.cpp -lgdi32  -o output/LinwisEngine.exe
 ```
 
 ## Design notes
