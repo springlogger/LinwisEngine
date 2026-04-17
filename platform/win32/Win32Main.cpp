@@ -11,7 +11,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     if (!window.Create(800, 600, L"My Engine", nCmdShow))
         return -1;
 
-    LinwisEngine engine;
+    lw::LinwisEngine engine;
 
     while (!window.ShouldClose())
     {

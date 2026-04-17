@@ -1,16 +1,19 @@
 #include "LinwisEngine.h"
 #include "Camera.h"
 #include "Renderer.h"
-#include "Cube.h"
+#include "Geometry.h"
+#include "Material.h"
+#include "Mesh.h"
+#include "CreateBaseGeometry.h"
 
 #include <chrono>
 #include <cmath>
 
 using Clock = std::chrono::steady_clock;
 
-namespace {
+namespace lw {
 
-lw::Camera createCamera(const DemoConfig& config) {
+Camera createCamera(const DemoConfig& config) {
     const float aspect = static_cast<float>(config.screenWidth) / static_cast<float>(config.screenHeight);
 
     return lw::Camera(
@@ -24,15 +27,17 @@ lw::Camera createCamera(const DemoConfig& config) {
     );
 }
 
-}
-
 LinwisEngine::LinwisEngine() {
     camera = createCamera(config);
-    scene = lw::Cube(
-        lw::Vector3(0.0f, 0.0f, 0.0f),
-        lw::Vector3(0.4f, 0.6f, 0.0f),
-        lw::Vector3(1.0f, 1.0f, 1.0f)
-    );
+
+    lw::Geometry cubeGeometry = lw::createCubeGeometry(2, 2, 2);
+    lw::Material cubeMaterial = lw::Material();
+
+    scene = lw::Mesh(cubeGeometry, cubeMaterial);
+    scene.setPosition(lw::Vector3(0.0f, 0.0f, 0.0f));
+    scene.setRotation(lw::Vector3(0.4f, 0.6f, 0.0f));
+    scene.setScale(lw::Vector3(1.0f, 1.0f, 1.0f));
+
     renderer = lw::Renderer(config.screenWidth, config.screenHeight);
 
     previousFrameTime = Clock::now();
@@ -50,5 +55,7 @@ void LinwisEngine::render() {
     scene.updateMatrix();
 
     renderer.render(scene, camera);
+
+}
 
 }

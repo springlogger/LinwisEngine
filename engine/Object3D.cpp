@@ -2,20 +2,15 @@
 
 namespace lw {
 
-namespace {
-const std::vector<Vector3> emptyVertices;
-const std::vector<Edge> emptyEdges;
-}
-
 Object3D::Object3D()
     : position(0.0f, 0.0f, 0.0f),
       rotation(0.0f, 0.0f, 0.0f),
       scale(1.0f, 1.0f, 1.0f),
-      matrix() {
+      objectMatrix() {
 }
 
 void Object3D::updateMatrix() {
-    matrix.identity()
+    objectMatrix.identity()
         .translate(position)
         .rotateZ(rotation.z)
         .rotateY(rotation.y)
@@ -45,22 +40,6 @@ const Vector3& Object3D::getRotation() const {
 
 const Vector3& Object3D::getScale() const {
     return scale;
-}
-
-const Matrix4& Object3D::getMatrix() const {
-    return matrix;
-}
-
-const std::vector<Vector3>& Object3D::getVertices() const {
-    return emptyVertices;
-}
-
-const std::vector<Edge>& Object3D::getEdges() const {
-    return emptyEdges;
-}
-
-bool Object3D::hasGeometry() const {
-    return !getVertices().empty() && !getEdges().empty();
 }
 
 } // namespace lw

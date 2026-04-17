@@ -2,9 +2,13 @@
 
 #include <chrono>
 #include "math.h"
-#include "Cube.h"
 #include "Renderer.h"
 #include "Camera.h"
+#include "Mesh.h"
+#include "RenderTarget.h"
+
+namespace lw
+{
 
 using Clock = std::chrono::steady_clock;
 
@@ -23,7 +27,7 @@ class LinwisEngine {
     Clock::time_point previousFrameTime;
     DemoConfig config;
     lw::Renderer renderer;
-    lw::Cube scene;
+    lw::Mesh scene;
     lw::Camera camera;
     float angle;
 
@@ -31,3 +35,5 @@ class LinwisEngine {
     void render();
     const Framebuffer& GetFramebuffer() const { return renderer.GetFramebuffer(); };
 };
+
+}

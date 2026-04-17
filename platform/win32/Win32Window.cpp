@@ -60,7 +60,7 @@ void Win32Window::PollEvents() {
     }
 }
 
-void Win32Window::Present(const Framebuffer& framebuffer)
+void Win32Window::Present(const lw::Framebuffer& framebuffer)
 {
 
     HDC hdc = GetDC(m_hwnd);

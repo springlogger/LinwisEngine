@@ -1,14 +1,15 @@
 ﻿#pragma once
-#include "Framebuffer.h"
+#include "RenderTarget.h"
 #include "Object3D.h"
 #include "Camera.h"
+#include "Mesh.h"
 #include <vector>
 
 namespace lw {
 
-struct ScreenPoint {
-    int x = 0;
-    int y = 0;
+struct ScreenVertex {
+    float x = 0;
+    float y = 0;
     float z = 0.0f;
     bool visible = false;
 };
@@ -22,20 +23,21 @@ public:
     int width() const { return screenWidth; };
     int height() const { return screenHeight; } ;
 
-    void render(const Object3D& scene, const Camera& camera);
+    void render(const Mesh& scene, const Camera& camera);
 
-    const Framebuffer& GetFramebuffer() const { return framebuffer; };
+    const Framebuffer& GetFramebuffer() const { return renderTarget.color; };
 
 private:
     int screenWidth;
     int screenHeight;
-    Framebuffer framebuffer;
+    RenderTarget renderTarget;
 
     void clearBuffer();
     void drawPoint(int x, int y, uint32_t color);
     void drawLine(int x0, int y0, int x1, int y1, uint32_t color);
-    std::vector<ScreenPoint> projectVertices(const Object3D& scene, const Camera& camera) const;
-    void drawWireframe(const std::vector<ScreenPoint>& projected, const std::vector<Edge>& edges);
+    std::vector<ScreenVertex> projectVertices(const Mesh& scene, const Camera& camera) const;
+    void drawWireframe(const std::vector<ScreenVertex>& projected, const std::vector<uint32_t>& indices);
+    void drawFilledTriangles(const std::vector<ScreenVertex>& projected, const std::vector<uint32_t>& indices, uint32_t color);
 };
 
 }

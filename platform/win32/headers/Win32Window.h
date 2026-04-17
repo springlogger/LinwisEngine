@@ -1,6 +1,6 @@
 #pragma once
 #include <windows.h>
-#include "FrameBuffer.h"
+#include "RenderTarget.h"
 
 class Win32Window
 {
@@ -17,7 +17,7 @@ public:
     bool ShouldClose() const { return m_shouldClose; };
 
     HWND GetHandle() const { return m_hwnd; };
-    void Present(const Framebuffer& framebuffer);
+    void Present(const lw::Framebuffer& framebuffer);
 
 private:
     HWND m_hwnd;
