@@ -26,7 +26,7 @@ bool Win32Window::Create(int width, int height, LPCWSTR title, int nCmdShow) {
         nullptr,
         nullptr,
         m_hInstance,
-        nullptr
+        this
     );
 
     if (!hwnd)
@@ -80,6 +80,20 @@ void Win32Window::Present(const lw::Framebuffer& framebuffer)
 
 LRESULT CALLBACK Win32Window::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+
+    Win32Window* window = nullptr;
+
+    if (uMsg == WM_NCCREATE)
+    {
+        CREATESTRUCTW* cs = reinterpret_cast<CREATESTRUCTW*>(lParam);
+        window = static_cast<Win32Window*>(cs->lpCreateParams);
+        SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
+    }
+    else
+    {
+        window = reinterpret_cast<Win32Window*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+    }
+
     switch (uMsg)
     {
     case WM_DESTROY:
@@ -91,6 +105,37 @@ LRESULT CALLBACK Win32Window::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LP
         PAINTSTRUCT ps;
         BeginPaint(hwnd, &ps);
         EndPaint(hwnd, &ps);
+        return 0;
+    }
+
+    case WM_KEYDOWN:
+    {
+        if (window)
+        {
+            switch (wParam)
+            {
+            case 'W': window->input.w = true; break;
+            case 'A': window->input.a = true; break;
+            case 'S': window->input.s = true; break;
+            case 'D': window->input.d = true; break;
+            case VK_ESCAPE: window->input.esc = true; PostQuitMessage(0); break;
+            }
+        }
+        return 0;
+    }
+
+    case WM_KEYUP:
+    {
+        if (window)
+        {
+            switch (wParam)
+            {
+            case 'W': window->input.w = false; break;
+            case 'A': window->input.a = false; break;
+            case 'S': window->input.s = false; break;
+            case 'D': window->input.d = false; break;
+            }
+        }
         return 0;
     }
     }

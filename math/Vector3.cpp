@@ -9,6 +9,10 @@ Vector3 Vector3::operator+(const Vector3& other) const {
     return Vector3(x + other.x, y + other.y, z + other.z);
 }
 
+Vector3 Vector3::operator+(float scalar) const {
+    return Vector3(x + scalar, y + scalar, z + scalar);
+}
+
 Vector3 Vector3::operator-(const Vector3& other) const {
     return Vector3(x - other.x, y - other.y, z - other.z);
 }
@@ -25,6 +29,13 @@ Vector3& Vector3::operator+=(const Vector3& other) {
     x += other.x;
     y += other.y;
     z += other.z;
+    return *this;
+}
+
+Vector3& Vector3::operator+=(float scalar) {
+    x += scalar;
+    y += scalar;
+    z += scalar;
     return *this;
 }
 
@@ -87,6 +98,10 @@ Vector3 Vector3::normalized() const {
 
 Vector3 Vector3::add(const Vector3& other) const {
     return *this + other;
+}
+
+Vector3 Vector3::addScalar(float scalar) const {
+    return *this + scalar;
 }
 
 Vector3 Vector3::sub(const Vector3& other) const {

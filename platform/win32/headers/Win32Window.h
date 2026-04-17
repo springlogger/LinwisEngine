@@ -2,6 +2,15 @@
 #include <windows.h>
 #include "RenderTarget.h"
 
+struct InputState
+{
+    bool w = false;
+    bool a = false;
+    bool s = false;
+    bool d = false;
+    bool esc = false;
+};
+
 class Win32Window
 {
 public:
@@ -19,12 +28,15 @@ public:
     HWND GetHandle() const { return m_hwnd; };
     void Present(const lw::Framebuffer& framebuffer);
 
+    const InputState& GetInput() const { return input; }
+
 private:
     HWND m_hwnd;
     HINSTANCE m_hInstance;
     bool m_shouldClose;
 
     BITMAPINFO gBitmapInfo;
+    InputState input;
 
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
     void InitBitmapInfo();

@@ -6,6 +6,7 @@
 #include "Camera.h"
 #include "Mesh.h"
 #include "RenderTarget.h"
+#include "Win32Window.h"
 
 namespace lw
 {
@@ -30,10 +31,21 @@ class LinwisEngine {
     lw::Mesh scene;
     lw::Camera camera;
     float angle;
+    float moveSpeed;
+
+    bool isMovingForward;
 
     LinwisEngine();
     void render();
+    void update(const InputState& input);
     const Framebuffer& GetFramebuffer() const { return renderer.GetFramebuffer(); };
+
+    void moveForward(float delta);
+    void moveBackward(float delta);
+    void moveRight(float delta);
+    void moveLeft(float delta);
+
+    void setIsMovingForward(bool val) { isMovingForward = val; };
 };
 
 }

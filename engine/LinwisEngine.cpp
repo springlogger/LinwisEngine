@@ -42,10 +42,10 @@ LinwisEngine::LinwisEngine() {
 
     previousFrameTime = Clock::now();
     angle = 0.0f;
+    moveSpeed = 2.0f;
 }
 
-void LinwisEngine::render() {
-
+void LinwisEngine::update(const InputState& input) {
     const auto currentFrameTime = Clock::now();
     const std::chrono::duration<float> deltaTime = currentFrameTime - previousFrameTime;
     previousFrameTime = currentFrameTime;
@@ -54,8 +54,63 @@ void LinwisEngine::render() {
     scene.setRotation(lw::Vector3(0.4f, angle, 0.0f));
     scene.updateMatrix();
 
+    if (input.w) {
+        moveForward(deltaTime.count());
+    }
+
+    if (input.s) {
+        moveBackward(deltaTime.count());
+    }
+
+    if (input.a) {
+        moveLeft(deltaTime.count());
+    }
+
+    if (input.d) {
+        moveRight(deltaTime.count());
+    }
+}
+
+void LinwisEngine::render() {
+
     renderer.render(scene, camera);
 
+}
+
+void LinwisEngine::moveForward(float delta)
+{
+    const Vector3 forward = camera.getForward();
+    const Vector3 offset = forward * (moveSpeed * delta);
+
+    camera.setPosition(camera.getEye() + offset);
+    camera.setTarget(camera.getTarget() + offset);
+}
+
+void LinwisEngine::moveBackward(float delta)
+{
+    const Vector3 forward = camera.getForward();
+    const Vector3 offset = forward * (moveSpeed * delta);
+
+    camera.setPosition(camera.getEye() - offset);
+    camera.setTarget(camera.getTarget() - offset);
+}
+
+void LinwisEngine::moveRight(float delta)
+{
+    const Vector3 right = camera.getRight();
+    const Vector3 offset = right * (moveSpeed * delta);
+
+    camera.setPosition(camera.getEye() + offset);
+    camera.setTarget(camera.getTarget() + offset);
+}
+
+void LinwisEngine::moveLeft(float delta)
+{
+    const Vector3 right = camera.getRight();
+    const Vector3 offset = right * (moveSpeed * delta);
+
+    camera.setPosition(camera.getEye() - offset);
+    camera.setTarget(camera.getTarget() - offset);
 }
 
 }

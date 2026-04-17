@@ -19,6 +19,8 @@ public:
     );
 
     void lookAt(const Vector3& newTarget);
+    void setPosition(const Vector3& newPosition);
+    void setTarget(const Vector3& newTarget);
     void setAspect(float newAspect);
 
     void updateViewMatrix();
@@ -30,6 +32,9 @@ public:
     const Vector3& getUp() const;
     const Vector3& getTarget() const;
     const Vector3& getEye() const;
+
+    const Vector3 getForward() const;
+    const Vector3 getRight() const;
 
 private:
     Vector3 eye;

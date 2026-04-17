@@ -76,6 +76,18 @@ void Camera::updateProjectionMatrix() {
     projectionMatrix = projection;
 }
 
+void Camera::setPosition(const Vector3& newPosition) {
+    eye = newPosition;
+
+    updateViewMatrix();
+}
+
+void Camera::setTarget(const Vector3& newTarget) {
+    target = newTarget;
+
+    updateViewMatrix();
+}
+
 const Matrix4& Camera::getViewMatrix() const {
     return viewMatrix;
 }
@@ -94,6 +106,14 @@ const Vector3& Camera::getTarget() const {
 
 const Vector3& Camera::getEye() const {
     return eye;
+}
+
+const Vector3 Camera::getForward() const {
+    return (target - eye).normalized();
+}
+
+const Vector3 Camera::getRight() const {
+    return getForward().cross(Vector3(0.0f, 1.0f, 0.0f)).normalized();
 }
 
 } // namespace lw

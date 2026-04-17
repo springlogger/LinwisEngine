@@ -13,11 +13,13 @@ public:
     constexpr Vector3() : x(0.0f), y(0.0f), z(0.0f) {}
     constexpr Vector3(float x, float y, float z) : x(x), y(y), z(z) {}
 
+    Vector3 operator+(float scalar) const;
     Vector3 operator+(const Vector3& other) const;
     Vector3 operator-(const Vector3& other) const;
     Vector3 operator*(float scalar) const;
     Vector3 operator/(float scalar) const;
 
+    Vector3& operator+=(float scalar);
     Vector3& operator+=(const Vector3& other);
     Vector3& operator-=(const Vector3& other);
     Vector3& operator*=(float scalar);
@@ -36,6 +38,8 @@ public:
     Vector3 add(const Vector3& other) const;
     Vector3 sub(const Vector3& other) const;
     Vector3 multiplyScalar(float scalar) const;
+
+    Vector3 addScalar(const float scalar) const;
 
     void print() const;
 };
