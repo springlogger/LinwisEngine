@@ -2,6 +2,7 @@
 
 #include "Vector3.h"
 #include "Vector4.h"
+#include "Quaternion.h"
 
 #include <array>
 #include <cstddef>
@@ -21,9 +22,10 @@ public:
     Matrix4& identity();
 
     Matrix4& translate(const Vector3& position);
-    Matrix4& rotateX(float angle);
-    Matrix4& rotateY(float angle);
-    Matrix4& rotateZ(float angle);
+    Matrix4& rotate(const Quaternion& q);
+    Matrix4& rotateX(float angleRad);
+    Matrix4& rotateY(float angleRad);
+    Matrix4& rotateZ(float angleRad);
     Matrix4& scale(const Vector3& scale);
 
     Vector3 transformPoint(const Vector3& vector) const;
@@ -31,9 +33,10 @@ public:
     Vector4 transform(const Vector4& vector) const;
 
     static Matrix4 translation(const Vector3& position);
-    static Matrix4 rotationX(float angle);
-    static Matrix4 rotationY(float angle);
-    static Matrix4 rotationZ(float angle);
+    static Matrix4 fromQuaternion(const Quaternion& quaternion);
+    static Matrix4 rotationX(float angleRad);
+    static Matrix4 rotationY(float angleRad);
+    static Matrix4 rotationZ(float angleRad);
     static Matrix4 scaling(const Vector3& scale);
 
 private:

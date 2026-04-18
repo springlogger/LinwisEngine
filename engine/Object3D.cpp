@@ -1,20 +1,20 @@
 ﻿#include "Object3D.h"
+#include "Matrix4.h"
 
 namespace lw {
 
 Object3D::Object3D()
     : position(0.0f, 0.0f, 0.0f),
-      rotation(0.0f, 0.0f, 0.0f),
+      quaternion(0.0f, 0.0f, 0.0f, 1.0f),
       scale(1.0f, 1.0f, 1.0f),
-      objectMatrix() {
+      objectMatrix()
+{
 }
 
 void Object3D::updateMatrix() {
     objectMatrix.identity()
         .translate(position)
-        .rotateZ(rotation.z)
-        .rotateY(rotation.y)
-        .rotateX(rotation.x)
+        .rotate(quaternion)
         .scale(scale);
 }
 
@@ -22,8 +22,12 @@ void Object3D::setPosition(const Vector3& newPosition) {
     position = newPosition;
 }
 
-void Object3D::setRotation(const Vector3& newRotation) {
-    rotation = newRotation;
+void Object3D::setRotation(const Vector3& rotation) {
+    quaternion = Quaternion::FromEuler(rotation.x, rotation.y, rotation.z);
+}
+
+void Object3D::setRotation(const Quaternion& newQuaternion) {
+    quaternion = newQuaternion.normalized();
 }
 
 void Object3D::setScale(const Vector3& newScale) {
@@ -34,8 +38,8 @@ const Vector3& Object3D::getPosition() const {
     return position;
 }
 
-const Vector3& Object3D::getRotation() const {
-    return rotation;
+const Quaternion& Object3D::getRotation() const {
+    return quaternion;
 }
 
 const Vector3& Object3D::getScale() const {

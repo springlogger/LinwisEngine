@@ -1,4 +1,5 @@
 ﻿#include "Matrix4.h"
+#include "Quaternion.h"
 
 #include <cmath>
 
@@ -72,6 +73,48 @@ Vector4 Matrix4::transform(const Vector4& vector) const {
     );
 }
 
+// v' = q * v * q^(-1)
+// для нормализованного кватерниона q^(-1) = conjugate(q)
+Matrix4 Matrix4::fromQuaternion(const Quaternion& q) {
+    Quaternion n = q.normalized();
+
+    const float x = n.x;
+    const float y = n.y;
+    const float z = n.z;
+    const float w = n.w;
+
+    const float xx = x * x;
+    const float yy = y * y;
+    const float zz = z * z;
+    const float xy = x * y;
+    const float xz = x * z;
+    const float yz = y * z;
+    const float wx = w * x;
+    const float wy = w * y;
+    const float wz = w * z;
+
+    Matrix4 matrix;
+    matrix.identity();
+
+    matrix[0]  = 1.0f - 2.0f * (yy + zz);
+    matrix[1]  = 2.0f * (xy - wz);
+    matrix[2]  = 2.0f * (xz + wy);
+
+    matrix[4]  = 2.0f * (xy + wz);
+    matrix[5]  = 1.0f - 2.0f * (xx + zz);
+    matrix[6]  = 2.0f * (yz - wx);
+
+    matrix[8]  = 2.0f * (xz - wy);
+    matrix[9]  = 2.0f * (yz + wx);
+    matrix[10] = 1.0f - 2.0f * (xx + yy);
+
+    return matrix;
+}
+
+Matrix4& Matrix4::rotate(const Quaternion& q) {
+    return *this *= fromQuaternion(q);
+}
+
 Matrix4 Matrix4::translation(const Vector3& position) {
     Matrix4 matrix;
     matrix[3] = position.x;
@@ -88,10 +131,10 @@ Matrix4 Matrix4::scaling(const Vector3& scale) {
     return matrix;
 }
 
-Matrix4 Matrix4::rotationX(float angle) {
+Matrix4 Matrix4::rotationX(float angleRad) {
     Matrix4 matrix;
-    const float c = std::cos(angle);
-    const float s = std::sin(angle);
+    const float c = std::cos(angleRad);
+    const float s = std::sin(angleRad);
 
     matrix[5] = c;
     matrix[6] = -s;
@@ -100,10 +143,10 @@ Matrix4 Matrix4::rotationX(float angle) {
     return matrix;
 }
 
-Matrix4 Matrix4::rotationY(float angle) {
+Matrix4 Matrix4::rotationY(float angleRad) {
     Matrix4 matrix;
-    const float c = std::cos(angle);
-    const float s = std::sin(angle);
+    const float c = std::cos(angleRad);
+    const float s = std::sin(angleRad);
 
     matrix[0] = c;
     matrix[2] = s;
@@ -112,10 +155,10 @@ Matrix4 Matrix4::rotationY(float angle) {
     return matrix;
 }
 
-Matrix4 Matrix4::rotationZ(float angle) {
+Matrix4 Matrix4::rotationZ(float angleRad) {
     Matrix4 matrix;
-    const float c = std::cos(angle);
-    const float s = std::sin(angle);
+    const float c = std::cos(angleRad);
+    const float s = std::sin(angleRad);
 
     matrix[0] = c;
     matrix[1] = -s;
@@ -132,16 +175,16 @@ Matrix4& Matrix4::scale(const Vector3& scale) {
     return *this *= scaling(scale);
 }
 
-Matrix4& Matrix4::rotateX(float angle) {
-    return *this *= rotationX(angle);
+Matrix4& Matrix4::rotateX(float angleRad) {
+    return *this *= rotationX(angleRad);
 }
 
-Matrix4& Matrix4::rotateY(float angle) {
-    return *this *= rotationY(angle);
+Matrix4& Matrix4::rotateY(float angleRad) {
+    return *this *= rotationY(angleRad);
 }
 
-Matrix4& Matrix4::rotateZ(float angle) {
-    return *this *= rotationZ(angle);
+Matrix4& Matrix4::rotateZ(float angleRad) {
+    return *this *= rotationZ(angleRad);
 }
 
 } // namespace lw

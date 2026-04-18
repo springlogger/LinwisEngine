@@ -81,6 +81,7 @@ void Win32Window::Present(const lw::Framebuffer& framebuffer)
 LRESULT CALLBACK Win32Window::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 
+    // Чё за пиздец
     Win32Window* window = nullptr;
 
     if (uMsg == WM_NCCREATE)
