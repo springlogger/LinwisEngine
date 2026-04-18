@@ -1,5 +1,7 @@
 ﻿# LinwisEngine
 
+ <img width="978" height="690" alt="изображение" src="https://github.com/user-attachments/assets/82152dc6-69f4-41f1-83ae-4766a00e727c" />
+
 A small C++17 console renderer that draws a rotating wireframe cube in the Windows terminal.
 
 ## Project layout
