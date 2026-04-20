@@ -111,10 +111,13 @@ void Renderer::drawFilledTriangles(const std::vector<ScreenVertex>& projected, c
         }
 
         const float area = EdgeFunction(v0.x, v0.y, v1.x, v1.y, v2.x, v2.y);
-        if (area == 0.0f) {
+        if (std::abs(area) < 1e-6f) {
             continue;
         }
 
+        if (area < 0.0f) {
+            continue;
+}
         const int minX = std::max(
             0,
             static_cast<int>(std::floor(std::min({v0.x, v1.x, v2.x})))
@@ -148,8 +151,7 @@ void Renderer::drawFilledTriangles(const std::vector<ScreenVertex>& projected, c
                 const float w2 = EdgeFunction(v0.x, v0.y, v1.x, v1.y, px, py);
 
                 const bool inside =
-                    (w0 >= 0.0f && w1 >= 0.0f && w2 >= 0.0f) ||
-                    (w0 <= 0.0f && w1 <= 0.0f && w2 <= 0.0f);
+                    (w0 >= 0.0f && w1 >= 0.0f && w2 >= 0.0f);
 
                 if (!inside) {
                     continue;

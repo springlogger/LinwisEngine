@@ -2,13 +2,19 @@
 #include <windows.h>
 #include "RenderTarget.h"
 
-struct InputState
+struct KeyboardInputState
 {
     bool w = false;
     bool a = false;
     bool s = false;
     bool d = false;
     bool esc = false;
+};
+
+struct MouseInputState {
+    LONG dx = 0;
+    LONG dy = 0;
+    bool isMouseLookActive = false;
 };
 
 class Win32Window
@@ -28,7 +34,8 @@ public:
     HWND GetHandle() const { return m_hwnd; };
     void Present(const lw::Framebuffer& framebuffer);
 
-    const InputState& GetInput() const { return input; }
+    const KeyboardInputState& GetKeyboardInput() const { return keyboardInput; }
+    const MouseInputState& GetMouseInput() const { return mouseInput; }
 
 private:
     HWND m_hwnd;
@@ -36,8 +43,13 @@ private:
     bool m_shouldClose;
 
     BITMAPINFO gBitmapInfo;
-    InputState input;
+    KeyboardInputState keyboardInput;
+    MouseInputState mouseInput;
+
+    void ConfineCursorToClient();
+    void SetMouseLook(bool enabled);
 
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    static void InitRawMouse(HWND hWnd);
     void InitBitmapInfo();
 };

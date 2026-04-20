@@ -17,7 +17,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     {
         window.PollEvents();
 
-        engine.update(window.GetInput());
+        engine.update(window.GetKeyboardInput(), window.GetMouseInput());
         engine.render();
 
         window.Present(engine.GetFramebuffer());

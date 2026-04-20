@@ -41,23 +41,38 @@ bool Win32Window::Create(int width, int height, LPCWSTR title, int nCmdShow) {
     windowHeight = height;
 
     InitBitmapInfo();
+    InitRawMouse(hwnd);
 
     return true;
 }
 
+void Win32Window::InitRawMouse(HWND hWnd)
+{
+    RAWINPUTDEVICE rid{};
+    rid.usUsagePage = 0x01;
+    rid.usUsage = 0x02;
+    rid.dwFlags = 0;
+    rid.hwndTarget = hWnd;
+
+    RegisterRawInputDevices(&rid, 1, sizeof(rid));
+}
+
 void Win32Window::PollEvents() {
-  MSG msg = {};
+    MSG msg = {};
 
-  while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-    {
-      if (msg.message == WM_QUIT)
-      {
-          m_shouldClose = true;
-      }
+    mouseInput.dx = 0;
+    mouseInput.dy = 0;
 
-      TranslateMessage(&msg);
-      DispatchMessage(&msg);
-    }
+    while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+        {
+        if (msg.message == WM_QUIT)
+        {
+            m_shouldClose = true;
+        }
+
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+        }
 }
 
 void Win32Window::Present(const lw::Framebuffer& framebuffer)
@@ -78,10 +93,58 @@ void Win32Window::Present(const lw::Framebuffer& framebuffer)
     ReleaseDC(m_hwnd, hdc);
 }
 
+void Win32Window::ConfineCursorToClient()
+{
+    RECT rect{};
+    GetClientRect(m_hwnd, &rect);
+
+    POINT leftTop{ rect.left, rect.top };
+    POINT rightBottom{ rect.right, rect.bottom };
+
+    ClientToScreen(m_hwnd, &leftTop);
+    ClientToScreen(m_hwnd, &rightBottom);
+
+    RECT clipRect{
+        leftTop.x,
+        leftTop.y,
+        rightBottom.x,
+        rightBottom.y
+    };
+
+    ClipCursor(&clipRect);
+}
+
+void Win32Window::SetMouseLook(bool enabled)
+{
+    if (mouseInput.isMouseLookActive == enabled) {
+        return;
+    }
+
+    mouseInput.isMouseLookActive = enabled;
+
+    if (enabled)
+    {
+        ShowCursor(FALSE);
+        SetCapture(m_hwnd);
+        ConfineCursorToClient();
+
+        mouseInput.dx = 0;
+        mouseInput.dy = 0;
+    }
+    else
+    {
+        ShowCursor(TRUE);
+        ReleaseCapture();
+        ClipCursor(nullptr);
+
+        mouseInput.dx = 0;
+        mouseInput.dy = 0;
+    }
+}
+
 LRESULT CALLBACK Win32Window::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 
-    // Чё за пиздец
     Win32Window* window = nullptr;
 
     if (uMsg == WM_NCCREATE)
@@ -115,11 +178,21 @@ LRESULT CALLBACK Win32Window::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LP
         {
             switch (wParam)
             {
-            case 'W': window->input.w = true; break;
-            case 'A': window->input.a = true; break;
-            case 'S': window->input.s = true; break;
-            case 'D': window->input.d = true; break;
-            case VK_ESCAPE: window->input.esc = true; PostQuitMessage(0); break;
+            case 'W': window->keyboardInput.w = true; break;
+            case 'A': window->keyboardInput.a = true; break;
+            case 'S': window->keyboardInput.s = true; break;
+            case 'D': window->keyboardInput.d = true; break;
+            case VK_ESCAPE: {
+                window->keyboardInput.esc = true; 
+
+                if (window->mouseInput.isMouseLookActive) {
+                    window->SetMouseLook(false);
+                }
+                else {
+                    PostQuitMessage(0); 
+                    break;
+                }
+            }
             }
         }
         return 0;
@@ -131,13 +204,40 @@ LRESULT CALLBACK Win32Window::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LP
         {
             switch (wParam)
             {
-            case 'W': window->input.w = false; break;
-            case 'A': window->input.a = false; break;
-            case 'S': window->input.s = false; break;
-            case 'D': window->input.d = false; break;
+            case 'W': window->keyboardInput.w = false; break;
+            case 'A': window->keyboardInput.a = false; break;
+            case 'S': window->keyboardInput.s = false; break;
+            case 'D': window->keyboardInput.d = false; break;
             }
         }
         return 0;
+    }
+
+    case WM_LBUTTONDOWN: {
+        if (window) {
+            window->SetMouseLook(true);
+        }
+        return 0;
+    }
+
+    case WM_INPUT: {
+        UINT dataSize = 0;
+        GetRawInputData((HRAWINPUT)lParam, RID_INPUT, nullptr, &dataSize, sizeof(RAWINPUTHEADER));
+
+        if (dataSize > 0) {
+            std::vector<BYTE> buffer(dataSize);
+
+            if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, buffer.data(), &dataSize, sizeof(RAWINPUTHEADER)) == dataSize) {
+                RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(buffer.data());
+
+                if (raw->header.dwType == RIM_TYPEMOUSE) {
+                    window->mouseInput.dx += raw->data.mouse.lLastX;
+                    window->mouseInput.dy += raw->data.mouse.lLastY;
+                }
+            }
+        }
+
+        break;
     }
     }
 

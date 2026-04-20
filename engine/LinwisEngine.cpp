@@ -42,10 +42,10 @@ LinwisEngine::LinwisEngine() {
 
     previousFrameTime = Clock::now();
     angle = 0.0f;
-    moveSpeed = 2.0f;
+    moveSpeed = 3.0f;
 }
 
-void LinwisEngine::update(const InputState& input) {
+void LinwisEngine::update(const KeyboardInputState& keyboard, const MouseInputState& mouse) {
     const auto currentFrameTime = Clock::now();
     const std::chrono::duration<float> deltaTime = currentFrameTime - previousFrameTime;
     previousFrameTime = currentFrameTime;
@@ -54,19 +54,27 @@ void LinwisEngine::update(const InputState& input) {
     scene.setRotation(lw::Vector3(0.4f, angle, 0.0f));
     scene.updateMatrix();
 
-    if (input.w) {
+    if (mouse.isMouseLookActive && (mouse.dx != 0 || mouse.dy != 0)) {
+        const float sens = 0.001f;
+        const float yaw = -static_cast<float>(mouse.dx) * sens;
+        const float pitch = -static_cast<float>(mouse.dy) * sens;
+
+        camera.rotateOn(pitch, yaw);
+    }
+
+    if (keyboard.w) {
         moveForward(deltaTime.count());
     }
 
-    if (input.s) {
+    if (keyboard.s) {
         moveBackward(deltaTime.count());
     }
 
-    if (input.a) {
+    if (keyboard.a) {
         moveLeft(deltaTime.count());
     }
 
-    if (input.d) {
+    if (keyboard.d) {
         moveRight(deltaTime.count());
     }
 }

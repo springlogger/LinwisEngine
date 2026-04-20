@@ -1,4 +1,5 @@
 ﻿#include "Vector3.h"
+#include "Quaternion.h"
 
 #include <cmath>
 #include <iostream>
@@ -106,6 +107,10 @@ Vector3 Vector3::addScalar(float scalar) const {
 
 Vector3 Vector3::sub(const Vector3& other) const {
     return *this - other;
+}
+
+Vector3 Vector3::clone() const {
+    return Vector3(this->x, this->y, this->z);
 }
 
 Vector3 Vector3::multiplyScalar(float scalar) const {

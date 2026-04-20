@@ -26,6 +26,8 @@ public:
     void updateViewMatrix();
     void updateProjectionMatrix();
 
+    void rotateOn(float pitch, float yaw);
+
     const Matrix4& getViewMatrix() const;
     const Matrix4& getProjectionMatrix() const;
 

@@ -37,7 +37,7 @@ class LinwisEngine {
 
     LinwisEngine();
     void render();
-    void update(const InputState& input);
+    void update(const KeyboardInputState& keyboard, const MouseInputState& mouse);
     const Framebuffer& GetFramebuffer() const { return renderer.GetFramebuffer(); };
 
     void moveForward(float delta);
