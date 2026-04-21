@@ -1,23 +1,24 @@
 ﻿# LinwisEngine
 
- <img width="978" height="690" alt="изображение" src="https://github.com/user-attachments/assets/82152dc6-69f4-41f1-83ae-4766a00e727c" />
+<img width="978" height="690" alt="изображение" src="https://github.com/user-attachments/assets/82152dc6-69f4-41f1-83ae-4766a00e727c" />
 
 A small C++17 software 3D renderer for Windows that draws into its own Win32 window using a CPU framebuffer and GDI blitting.
 
 ## Project layout
 
-- `headers/` - public engine, math, scene, and utility interfaces.
-- `engine/` - renderer, camera, geometry, mesh, material, and scene object implementations.
-- `math/` - vector, matrix, quaternion, and helper math code.
-- `platform/win32/` - Win32 entry point, window creation, message loop, input handling, and framebuffer presentation.
-- `platform/win32/output/` - build output directory for the Windows executable.
+- `engine/include/lw/` - public engine headers grouped by modules such as math, core, helpers, and platform.
+- `engine/src/core/` - core engine objects such as renderer, camera, mesh, scene objects, geometry, and materials.
+- `engine/src/math/` - vector, matrix, quaternion, and math utility implementations.
+- `engine/src/helpers/` - helper scene objects such as debug and visualization helpers.
+- `engine/src/platform/win32/` - Win32 entry point, window creation, message loop, input handling, and framebuffer presentation.
+- `engine/output/` - build output directory for the Windows executable.
 - `test/` - experimental or manual test files.
 
 ## Current rendering model
 
-The engine is no longer rendering to the console.
+The engine renders into its own Win32 window.
 
-It now uses:
+It currently uses:
 
 - a CPU-side framebuffer
 - a software renderer that writes pixels into that framebuffer
@@ -30,30 +31,94 @@ So the pipeline is roughly:
 2. the software renderer fills the framebuffer
 3. the Win32 layer copies the framebuffer into the window
 
-## Build
+## Current architecture
 
-The project is built with the VS Code task `build-engine`.
+The codebase is organized into several modules:
 
-### VS Code
+- math primitives such as vectors, matrices, and quaternions
+- core scene and rendering objects such as `Object3D`, `Mesh`, `Camera`, and `Renderer`
+- helper objects intended for engine users, such as axes or debug-style helpers
+- a platform layer isolated under `platform/win32`
+
+The engine logic and the Win32 layer are intentionally kept separate so platform-specific code does not leak into the renderer, math, or scene code.
+
+Public headers are placed under:
+
+```text
+engine/include/lw/
+```
+
+and are intended to be included like this:
+
+```cpp
+#include <lw/math/Vector3.h>
+#include <lw/core/Camera.h>
+#include <lw/core/Mesh.h>
+```
+
+## Scene model
+
+The engine is being structured around scene objects rather than flat render-only data.
+
+The current idea is:
+
+- `Object3D` is the common base for transformable scene objects
+- `Mesh` extends `Object3D` with geometry and material data
+- helpers can also be exposed as scene objects that users can place into the scene
+- scene storage is being prepared for polymorphic usage
+
+## Building the project
+
+The project is currently built with a VS Code task and `g++` from MSYS2 UCRT64.
+
+### Requirements
+
+- Windows
+- MSYS2 with the UCRT64 toolchain
+- `g++`
+- VS Code with tasks support
+
+Current compiler path used by the project:
+
+```text
+C:/Program1/c++/msys64/ucrt64/bin/g++.exe
+```
+
+If your MSYS2 installation is located elsewhere, update the path in `tasks.json`.
+
+### Build from VS Code
 
 Use:
 
 - `Terminal -> Run Task -> build-engine`
 - or `Ctrl+Shift+B`
 
-This produces:
+This compiles the engine sources and produces:
 
 ```text
-platform/win32/output/Win32Main.exe
+engine/output/Win32Main.exe
 ```
 
-### Run
+### Run from VS Code
 
-Use the VS Code task:
+Use:
 
 - `Terminal -> Run Task -> run-engine`
 
-This first builds the project and then runs the executable.
+This runs the built executable.
+
+### Current build layout
+
+The build task currently compiles source files from:
+
+- `engine/src/core/`
+- `engine/src/math/`
+- `engine/src/helpers/`
+- `engine/src/platform/win32/`
+
+and links against:
+
+- `gdi32`
 
 ## Build command
 
@@ -65,32 +130,27 @@ C:/Program1/c++/msys64/ucrt64/bin/g++.exe ^
   -Wall ^
   -Wextra ^
   -g ^
-  engine/*.cpp ^
-  math/*.cpp ^
-  platform/win32/Win32Main.cpp ^
-  platform/win32/Win32Window.cpp ^
-  -I headers ^
-  -I platform/win32 ^
-  -I platform/win32/headers ^
+  engine/src/core/*.cpp ^
+  engine/src/math/*.cpp ^
+  engine/src/helpers/*.cpp ^
+  engine/src/platform/win32/Win32Main.cpp ^
+  engine/src/platform/win32/Win32Window.cpp ^
+  -I engine/include ^
   -lgdi32 ^
-  -o platform/win32/output/Win32Main.exe
+  -o engine/output/Win32Main.exe
 ```
 
 Or in one line:
 
 ```powershell
-C:/Program1/c++/msys64/ucrt64/bin/g++.exe -std=c++17 -Wall -Wextra -g engine/*.cpp math/*.cpp platform/win32/Win32Main.cpp platform/win32/Win32Window.cpp -I headers -I platform/win32 -I platform/win32/headers -lgdi32 -o platform/win32/output/Win32Main.exe
+C:/Program1/c++/msys64/ucrt64/bin/g++.exe -std=c++17 -Wall -Wextra -g engine/src/core/*.cpp engine/src/math/*.cpp engine/src/helpers/*.cpp engine/src/platform/win32/Win32Main.cpp engine/src/platform/win32/Win32Window.cpp -I engine/include -lgdi32 -o engine/output/Win32Main.exe
 ```
 
-## Notes about the current architecture
+## Notes
 
-The codebase uses:
+The project is still evolving, and the structure is being gradually moved toward a cleaner engine layout with:
 
-- a small `lw` namespace
-- value-type math primitives such as vectors, matrices, and quaternions
-- explicit transform construction for scene objects
-- a software renderer working with scene geometry on the CPU
-- a platform layer separated into `platform/win32`
-- a Win32 main loop that handles window messages and presents the framebuffer
-
-The engine logic and the Win32 windowing code are intentionally separated, so platform-specific code stays outside the core renderer and scene code.
+- module-based source directories
+- public headers under `engine/include/lw`
+- clearer separation between engine internals and user-facing API
+- scene objects that can be reused both by the engine and by user code
