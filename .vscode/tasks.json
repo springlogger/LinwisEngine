@@ -11,19 +11,20 @@
         "-Wextra",
         "-g",
 
-        "${workspaceFolder}/engine/*.cpp",
-        "${workspaceFolder}/math/*.cpp",
-        "${workspaceFolder}/platform/win32/Win32Main.cpp",
-        "${workspaceFolder}/platform/win32/Win32Window.cpp",
+        "${workspaceFolder}/engine/src/math/*.cpp",
+        "${workspaceFolder}/engine/src/core/*.cpp",
+        // "${workspaceFolder}/engine/src/scene/*.cpp",
+        // "${workspaceFolder}/engine/src/graphics/*.cpp",
+        "${workspaceFolder}/engine/src/helpers/*.cpp",
+        "${workspaceFolder}/engine/src/platform/win32/Win32Main.cpp",
+        "${workspaceFolder}/engine/src/platform/win32/Win32Window.cpp",
 
-        "-I", "${workspaceFolder}/headers",
-        "-I", "${workspaceFolder}/platform/win32",
-        "-I", "${workspaceFolder}/platform/win32/headers",
+        "-I", "${workspaceFolder}/engine/include",
 
         "-lgdi32",
 
         "-o",
-        "${workspaceFolder}/platform/win32/output/Win32Main.exe"
+        "${workspaceFolder}/engine/output/Win32Main.exe"
       ],
       "options": {
         "shell": {
@@ -40,7 +41,7 @@
     {
       "label": "run-engine",
       "type": "shell",
-      "command": "${workspaceFolder}/platform/win32/output/Win32Main.exe",
+      "command": "${workspaceFolder}/engine/output/Win32Main.exe",
       "dependsOn": "build-engine",
       "options": {
         "shell": {
