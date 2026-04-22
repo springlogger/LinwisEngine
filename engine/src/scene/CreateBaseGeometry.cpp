@@ -1,11 +1,11 @@
-#include <lw/core/Geometry.h>
+#include <lw/scene/MeshGeometry.h>
 #include <lw/math/Vector3.h>
 
 namespace lw {
 
-Geometry createCubeGeometry(float width, float height, float depth)
+MeshGeometry createCubeGeometry(float width, float height, float depth)
 {
-    Geometry geometry;
+    MeshGeometry geometry;
 
     const float hx = width * 0.5f;
     const float hy = height * 0.5f;

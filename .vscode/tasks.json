@@ -13,8 +13,8 @@
 
         "${workspaceFolder}/engine/src/math/*.cpp",
         "${workspaceFolder}/engine/src/core/*.cpp",
-        // "${workspaceFolder}/engine/src/scene/*.cpp",
-        // "${workspaceFolder}/engine/src/graphics/*.cpp",
+        "${workspaceFolder}/engine/src/scene/*.cpp",
+        "${workspaceFolder}/engine/src/graphics/*.cpp",
         "${workspaceFolder}/engine/src/helpers/*.cpp",
         "${workspaceFolder}/engine/src/platform/win32/Win32Main.cpp",
         "${workspaceFolder}/engine/src/platform/win32/Win32Window.cpp",

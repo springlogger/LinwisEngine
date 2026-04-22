@@ -1,6 +1,6 @@
 ﻿#include <lw/math/Matrix4.h>
 #include <lw/math/Vector3.h>
-#include <lw/core/Camera.h>
+#include <lw/scene/Camera.h>
 #include <lw/math/Math.h>
 
 #include <cmath>

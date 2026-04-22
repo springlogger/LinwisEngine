@@ -1,10 +1,10 @@
 #pragma once
 
 #include <lw/math/Math.h>
-#include <lw/core/Renderer.h>
-#include <lw/core/Camera.h>
-#include <lw/core/Mesh.h>
-#include <lw/core/RenderTarget.h>
+#include <lw/graphics/Renderer.h>
+#include <lw/scene/Camera.h>
+#include <lw/scene/Mesh.h>
+#include <lw/graphics/RenderTarget.h>
 #include <lw/platform/win32/Win32Window.h>
 
 #include <chrono>

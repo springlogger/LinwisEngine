@@ -1,4 +1,4 @@
-﻿#include <lw/core/Object3D.h>
+﻿#include <lw/scene/Object3D.h>
 #include <lw/math/Matrix4.h>
 
 namespace lw {
@@ -20,18 +20,22 @@ void Object3D::updateMatrix() {
 
 void Object3D::setPosition(const Vector3& newPosition) {
     position = newPosition;
+    updateMatrix();
 }
 
 void Object3D::setRotation(const Vector3& rotation) {
     quaternion = Quaternion::FromEuler(rotation.x, rotation.y, rotation.z);
+    updateMatrix();
 }
 
 void Object3D::setRotation(const Quaternion& newQuaternion) {
     quaternion = newQuaternion.normalized();
+    updateMatrix();
 }
 
 void Object3D::setScale(const Vector3& newScale) {
     scale = newScale;
+    updateMatrix();
 }
 
 const Vector3& Object3D::getPosition() const {

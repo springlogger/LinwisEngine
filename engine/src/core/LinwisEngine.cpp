@@ -1,12 +1,13 @@
 #include <lw/core/LinwisEngine.h>
-#include <lw/core/Renderer.h>
-#include <lw/core/Camera.h>
-#include <lw/core/Mesh.h>
+#include <lw/graphics/Renderer.h>
+#include <lw/scene/Camera.h>
+#include <lw/scene/Mesh.h>
 #include <lw/math/Math.h>
 #include <lw/platform/win32/Win32Window.h>
-#include <lw/core/Geometry.h>
-#include <lw/core/Material.h>
-#include <lw/core/CreateBaseGeometry.h>
+#include <lw/scene/MeshGeometry.h>
+#include <lw/scene/Material.h>
+#include <lw/scene/CreateBaseGeometry.h>
+#include <lw/helpers/AxesHelper.h>
 
 #include <chrono>
 #include <cmath>
@@ -32,7 +33,7 @@ Camera createCamera(const DemoConfig& config) {
 LinwisEngine::LinwisEngine() {
     camera = createCamera(config);
 
-    Geometry cubeGeometry = createCubeGeometry(2, 2, 2);
+    MeshGeometry cubeGeometry = createCubeGeometry(2, 2, 2);
     Material cubeMaterial = Material();
 
     auto cube = std::make_unique<Mesh>(cubeGeometry, cubeMaterial);
@@ -40,7 +41,11 @@ LinwisEngine::LinwisEngine() {
     cube->setRotation(Vector3(0.4f, 0.6f, 0.0f));
     cube->setScale(Vector3(1.0f, 1.0f, 1.0f));
 
+    auto axesHelper = std::make_unique<AxesHelper>();
+    // axesHelper->setScale(Vector3(10, 10, 10));
+
     scene.push_back(std::move(cube));
+    scene.push_back(std::move(axesHelper));
 
     renderer = Renderer(config.screenWidth, config.screenHeight);
 

@@ -3,21 +3,21 @@
 #include <lw/math/Vector3.h>
 
 #include <vector>
-#include <stdint.h>
+#include <cstdint>
 
 namespace lw
 {
-
-struct Vertex
+  
+  struct LineVertex
 {
     Vector3 position;
-    // потом добавишь normal, uv, color
+    uint32_t color;
 };
 
-class Geometry {
+class LineGeometry
+{
 public:
-    std::vector<Vertex> vertices;
+    std::vector<LineVertex> vertices;
     std::vector<uint32_t> indices;
 };
-
 }

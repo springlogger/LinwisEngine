@@ -1,6 +1,6 @@
 #pragma once
 #include <windows.h>
-#include <lw/core/RenderTarget.h>
+#include <lw/graphics/RenderTarget.h>
 
 namespace lw 
 {

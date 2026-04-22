@@ -29,8 +29,6 @@ public:
     const Vector3& getPosition() const;
     const Quaternion& getRotation() const;
     const Vector3& getScale() const;
-
-    virtual bool hasGeometry() const { return false; };
 };
 
 } // namespace lw
