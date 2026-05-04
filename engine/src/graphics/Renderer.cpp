@@ -1,7 +1,6 @@
 ﻿#include <lw/graphics/Renderer.h>
-
-#include <cmath>
-#include <algorithm>
+#include <lw/graphics/Clip.h>
+#include <lw/graphics/Rasterizer.h>
 
 namespace lw {
 
@@ -25,153 +24,58 @@ void Renderer::clearBuffer()
     renderTarget.depth.Clear(1.0f);
 }
 
-void Renderer::drawPoint(int x, int y, uint32_t color)
+static ScreenVertex ToScreenVertex(
+    const ClipVertex& v,
+    int screenWidth,
+    int screenHeight)
 {
-    renderTarget.color.PutPixel(x, y, color);
+    const Vector4& p = v.clipPosition;
+
+    const float invW = 1.0f / p.w;
+
+    const float xNdc = p.x * invW;
+    const float yNdc = p.y * invW;
+    const float zNdc = p.z * invW;
+
+    ScreenVertex out;
+    out.x = (xNdc + 1.0f) * 0.5f * static_cast<float>(screenWidth);
+    out.y = (1.0f - yNdc) * 0.5f * static_cast<float>(screenHeight);
+    out.z = zNdc;
+
+    return out;
 }
 
-static float EdgeFunction(
-    float ax, float ay,
-    float bx, float by,
-    float px, float py)
+static std::vector<ScreenTriangle> ProjectTrianglesToScreen(
+    const std::vector<ClipTriangle>& triangles,
+    int screenWidth,
+    int screenHeight)
 {
-    return (bx - ax) * (py - ay) - (by - ay) * (px - ax);
-}
+    std::vector<ScreenTriangle> output;
+    output.reserve(triangles.size());
 
-void Renderer::drawLine(int x0, int y0, int x1, int y1, uint32_t color)
-{
-    const int dx = std::abs(x1 - x0);
-    const int dy = std::abs(y1 - y0);
-    const int sx = x0 < x1 ? 1 : -1;
-    const int sy = y0 < y1 ? 1 : -1;
-
-    int error = dx - dy;
-
-    while (true) {
-        drawPoint(x0, y0, color);
-
-        if (x0 == x1 && y0 == y1) {
-            break;
-        }
-
-        const int doubledError = 2 * error;
-        if (doubledError > -dy) {
-            error -= dy;
-            x0 += sx;
-        }
-        if (doubledError < dx) {
-            error += dx;
-            y0 += sy;
-        }
-    }
-}
-
-void Renderer::drawFilledTriangles(const std::vector<ScreenVertex>& projected, const std::vector<uint32_t>& indices, uint32_t color) {
-
-    for (std::size_t i = 0; i < (indices.size() - 2); i += 3) {
-
-        const ScreenVertex& v0 = projected[indices[i]];
-        const ScreenVertex& v1 = projected[indices[i + 1]];
-        const ScreenVertex& v2 = projected[indices[i + 2]];
-
-        if (!v0.visible || !v1.visible || !v2.visible) {
-            continue;
-        }
-
-        const float area = EdgeFunction(v0.x, v0.y, v1.x, v1.y, v2.x, v2.y);
-        if (std::abs(area) < 1e-6f) {
-            continue;
-        }
-
-        if (area < 0.0f) {
-            continue;
-}
-        const int minX = std::max(
-            0,
-            static_cast<int>(std::floor(std::min({v0.x, v1.x, v2.x})))
-        );
-
-        const int maxX = std::min(
-            renderTarget.color.width - 1,
-            static_cast<int>(std::ceil(std::max({v0.x, v1.x, v2.x})))
-        );
-
-        const int minY = std::max(
-            0,
-            static_cast<int>(std::floor(std::min({v0.y, v1.y, v2.y})))
-        );
-
-        const int maxY = std::min(
-            renderTarget.color.height - 1,
-            static_cast<int>(std::ceil(std::max({v0.y, v1.y, v2.y})))
-        );
-
-        for (int y = minY; y <= maxY; ++y)
-        {
-            for (int x = minX; x <= maxX; ++x)
-            {
-                const float px = static_cast<float>(x) + 0.5f;
-                const float py = static_cast<float>(y) + 0.5f;
-
-                // напротив v0, поэтому если бы p = v0, то мы бы получили α = 1. От него считаем долю по v0
-                const float w0 = EdgeFunction(v1.x, v1.y, v2.x, v2.y, px, py);
-                const float w1 = EdgeFunction(v2.x, v2.y, v0.x, v0.y, px, py);
-                const float w2 = EdgeFunction(v0.x, v0.y, v1.x, v1.y, px, py);
-
-                const bool inside =
-                    (w0 >= 0.0f && w1 >= 0.0f && w2 >= 0.0f);
-
-                if (!inside) {
-                    continue;
-                }
-
-                // P=αv0​+βv1​+γv2​
-                const float alpha = w0 / area;
-                const float beta  = w1 / area;
-                const float gamma = w2 / area;
-
-                // zP​=αz0​+βz1​+γz2​
-                const float depth =
-                    alpha * v0.z +
-                    beta  * v1.z +
-                    gamma * v2.z;
-
-                if (depth < renderTarget.depth.At(x, y))
-                {
-                    renderTarget.depth.At(x, y) = depth;
-                    renderTarget.color.PutPixel(x, y, color);
-                }
-            }
-        }
-
-    }
-}
-
-void Renderer::drawLineSegment(
-    const ScreenVertex& a,
-    const ScreenVertex& b,
-    uint32_t color)
-{
-    if (!a.visible || !b.visible) {
-        return;
+    for (const ClipTriangle& triangle : triangles)
+    {
+        output.push_back({
+            ToScreenVertex(triangle.v0, screenWidth, screenHeight),
+            ToScreenVertex(triangle.v1, screenWidth, screenHeight),
+            ToScreenVertex(triangle.v2, screenWidth, screenHeight)
+        });
     }
 
-    drawLine(
-        static_cast<int>(a.x),
-        static_cast<int>(a.y),
-        static_cast<int>(b.x),
-        static_cast<int>(b.y),
-        color
-    );
+    return output;
 }
 
-void Renderer::drawWireframe(
-    const std::vector<ScreenVertex>& projected,
+static std::vector<ClipTriangle> AssembleTriangles(
+    const std::vector<ClipVertex>& vertices,
     const std::vector<uint32_t>& indices)
 {
+    std::vector<ClipTriangle> triangles;
+
     if (indices.size() % 3 != 0) {
-        return;
+        return triangles;
     }
+
+    triangles.reserve(indices.size() / 3);
 
     for (std::size_t i = 0; i < indices.size(); i += 3)
     {
@@ -179,103 +83,212 @@ void Renderer::drawWireframe(
         const uint32_t i1 = indices[i + 1];
         const uint32_t i2 = indices[i + 2];
 
-        if (i0 >= projected.size() || i1 >= projected.size() || i2 >= projected.size()) {
+        if (i0 >= vertices.size() ||
+            i1 >= vertices.size() ||
+            i2 >= vertices.size())
+        {
             continue;
         }
 
-        drawLineSegment(projected[i0], projected[i1], 0x00FFFFFF);
-        drawLineSegment(projected[i1], projected[i2], 0x00FFFFFF);
-        drawLineSegment(projected[i2], projected[i0], 0x00FFFFFF);
-    }
-}
-
-void Renderer::drawLineIndices(
-    const std::vector<ScreenVertex>& projected,
-    const std::vector<LineVertex>& vertices,
-    const std::vector<uint32_t>& indices)
-{
-    if (indices.size() % 2 != 0) {
-        return;
+        triangles.push_back({
+            vertices[i0],
+            vertices[i1],
+            vertices[i2]
+        });
     }
 
-    for (std::size_t i = 0; i < indices.size(); i += 2)
-    {
-        const uint32_t i0 = indices[i];
-        const uint32_t i1 = indices[i + 1];
-
-        if (i0 >= projected.size() || i1 >= projected.size()) {
-            continue;
-        }
-
-        drawLineSegment(projected[i0], projected[i1], vertices[i0].color);
-    }
+    return triangles;
 }
 
 template<typename TVertex>
-static std::vector<ScreenVertex> projectVertexArray(const std::vector<TVertex>& vertices, const Matrix4& objectMatrix, const Camera& camera, int screenWidth, int screenHeight) {
-    std::vector<ScreenVertex> projected(vertices.size());
+static ClipVertex ProcessVertex(
+    const TVertex& vertex,
+    const Matrix4& model,
+    const Matrix4& view,
+    const Matrix4& projection)
+{
+    const Vector3 world =
+        model.transformPoint(vertex.position);
 
-    for (std::size_t i = 0; i < vertices.size(); ++i) {
-        const Vector3 vertexWorld = objectMatrix.transformPoint(vertices[i].position);
-        const Vector3 vertexView = camera.getViewMatrix().transformPoint(vertexWorld);
-        const Vector4 vertexClip = camera.getProjectionMatrix().transform(
-            Vector4(vertexView.x, vertexView.y, vertexView.z, 1.0f)
-        );
+    const Vector3 viewPos =
+        view.transformPoint(world);
 
-        if (std::abs(vertexClip.w) < 1e-6f) {
-            continue;
-        }
+    const Vector4 clip =
+        projection.transform(Vector4(viewPos.x, viewPos.y, viewPos.z, 1.0f));
 
-        const float xNdc = vertexClip.x / vertexClip.w;
-        const float yNdc = vertexClip.y / vertexClip.w;
-        const float zNdc = vertexClip.z / vertexClip.w;
+    ClipVertex out;
+    out.clipPosition = clip;
+    out.color = vertex.color;
 
-        projected[i] = {
-            ((xNdc + 1.0f) * 0.5f * static_cast<float>(screenWidth)),
-            ((1.0f - yNdc) * 0.5f * static_cast<float>(screenHeight)),
-            zNdc,
-            zNdc >= -1.0f && zNdc <= 1.0f
-        };
+    return out;
+}
+
+template<typename TVertex>
+static std::vector<ClipVertex> ProcessVertices(
+    const std::vector<TVertex>& vertices,
+    const Matrix4& model,
+    const Camera& camera)
+{
+    std::vector<ClipVertex> output;
+    output.reserve(vertices.size());
+
+    const Matrix4 view = camera.getViewMatrix();
+    const Matrix4 projection = camera.getProjectionMatrix();
+
+    for (const TVertex& vertex : vertices)
+    {
+        output.push_back(ProcessVertex(vertex, model, view, projection));
     }
 
-    return projected;
-}
-
-std::vector<ScreenVertex> Renderer::projectVertices(const Mesh& object, const Camera& camera) const
-{
-    return projectVertexArray(object.getGeometry().vertices, object.getMatrix(), camera, screenWidth, screenHeight);
-}
-
-std::vector<ScreenVertex> Renderer::projectVertices(const LineSegments& object, const Camera& camera) const
-{
-    return projectVertexArray(object.getGeometry().vertices, object.getMatrix(), camera, screenWidth, screenHeight);
+    return output;
 }
 
 void Renderer::renderMesh(const Mesh& mesh, const Camera& camera)
 {
     const MeshGeometry& geometry = mesh.getGeometry();
 
-    const auto projected = projectVertices(mesh, camera);
+    // 1. Vertex processing
+    const std::vector<ClipVertex> clipVertices =
+        ProcessVertices(
+            geometry.vertices,
+            mesh.getMatrix(),
+            camera
+        );
 
-    drawFilledTriangles(projected, geometry.indices, 0x00000033);
-    drawWireframe(projected, geometry.indices);
+    // 2. Primitive assembly
+    const std::vector<ClipTriangle> triangles =
+        AssembleTriangles(
+            clipVertices,
+            geometry.indices
+        );
+
+    // 3. Clipping + triangulation
+    const std::vector<ClipTriangle> clippedTriangles =
+        ClipTriangles(triangles);
+
+    // 4. Perspective divide + viewport
+    const std::vector<ScreenTriangle> screenTriangles =
+        ProjectTrianglesToScreen(
+            clippedTriangles,
+            screenWidth,
+            screenHeight
+        );
+
+    // 5. Rasterization
+    RasterizeTriangles(renderTarget, screenTriangles, 0x00000033);
+
+    // 6. Wireframe pass
+    if (wireframe) {
+        RasterizeWireframe(renderTarget, screenTriangles, 0x00FFFFFF);
+    }
+}
+
+static std::vector<ClipSegment> AssembleSegments(
+    const std::vector<ClipVertex>& vertices,
+    const std::vector<uint32_t>& indices)
+{
+    std::vector<ClipSegment> segments;
+
+    if (indices.size() % 2 != 0) {
+        return segments;
+    }
+
+    segments.reserve(indices.size() / 2);
+
+    for (std::size_t i = 0; i < indices.size(); i += 2)
+    {
+        const uint32_t i0 = indices[i];
+        const uint32_t i1 = indices[i + 1];
+
+        if (i0 >= vertices.size() || i1 >= vertices.size()) {
+            continue;
+        }
+
+        segments.push_back({ vertices[i0], vertices[i1] });
+    }
+
+    return segments;
+}
+
+static std::vector<ClipSegment> ClipSegments(
+    std::vector<ClipSegment> segments)
+{
+    std::vector<ClipSegment> output;
+
+    for (ClipSegment& seg : segments)
+    {
+        if (ClipLine(seg.a, seg.b)) {
+            output.push_back(seg);
+        }
+    }
+
+    return output;
+}
+
+static std::vector<ScreenSegment> ProjectSegmentsToScreen(
+    const std::vector<ClipSegment>& segments,
+    int screenWidth,
+    int screenHeight)
+{
+    std::vector<ScreenSegment> output;
+    output.reserve(segments.size());
+
+    for (const ClipSegment& seg : segments)
+    {
+        output.push_back({
+            ToScreenVertex(seg.a, screenWidth, screenHeight),
+            ToScreenVertex(seg.b, screenWidth, screenHeight),
+            seg.a.color
+        });
+    }
+
+    return output;
 }
 
 void Renderer::renderLineSegments(const LineSegments& lineSegments, const Camera& camera)
 {
     const LineGeometry& geometry = lineSegments.getGeometry();
 
-    const auto projected = projectVertices(lineSegments, camera);
+    // 1. Vertex processing
+    const std::vector<ClipVertex> clipVertices =
+        ProcessVertices(
+            geometry.vertices,
+            lineSegments.getMatrix(),
+            camera
+        );
 
-    drawLineIndices(projected, geometry.vertices, geometry.indices);
+    // 2. Primitive assembly
+    const std::vector<ClipSegment> segments =
+        AssembleSegments(
+            clipVertices,
+            geometry.indices
+        );
+
+    // 3. Clipping
+    const std::vector<ClipSegment> clippedSegments =
+        ClipSegments(segments);
+
+    // 4. Perspective divide + viewport
+    const std::vector<ScreenSegment> screenSegments =
+        ProjectSegmentsToScreen(
+            clippedSegments,
+            screenWidth,
+            screenHeight
+        );
+
+    // 5. Rasterization
+    RasterizeLines(renderTarget, screenSegments);
 }
 
-void Renderer::render(const std::vector<std::shared_ptr<Object3D>> scene, const Camera& camera)
+
+void Renderer::render(const std::vector<std::shared_ptr<Object3D>>& scene, const Camera& camera)
 {
     clearBuffer();
     for (const auto& object : scene) {
 
         const RenderableObject* renderableObject = dynamic_cast<const RenderableObject*>(object.get());
+        
+        if (!renderableObject) continue;
 
         switch (renderableObject->getPrimitiveType())
         {

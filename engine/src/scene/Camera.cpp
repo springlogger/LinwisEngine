@@ -121,8 +121,8 @@ void Camera::rotateOn(float pitch, float yaw) {
     Vector3 forward = getForward().normalized();
     Vector3 right = getRight().normalized();
 
-    Quaternion yawRotation   = Quaternion().FromAxisAngle(Vector3(0, 1, 0), yaw);
-    Quaternion pitchRotation = Quaternion().FromAxisAngle(right, pitch);
+    Quaternion yawRotation   = Quaternion::FromAxisAngle(Vector3(0.0f, 1.0f, 0.0f), yaw);
+    Quaternion pitchRotation = Quaternion::FromAxisAngle(right, pitch);
 
     Quaternion rotation = pitchRotation * yawRotation;
 

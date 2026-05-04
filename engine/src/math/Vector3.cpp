@@ -1,4 +1,4 @@
-﻿#include <lw/math/Vector3.h>
+#include <lw/math/Vector3.h>
 
 #include <cmath>
 #include <iostream>
@@ -94,30 +94,6 @@ void Vector3::normalize() {
 Vector3 Vector3::normalized() const {
     const float len = length();
     return len > 1e-6f ? *this / len : Vector3();
-}
-
-Vector3 Vector3::add(const Vector3& other) const {
-    return *this + other;
-}
-
-Vector3 Vector3::addScalar(float scalar) const {
-    return *this + scalar;
-}
-
-Vector3 Vector3::sub(const Vector3& other) const {
-    return *this - other;
-}
-
-Vector3 Vector3::clone() const {
-    return Vector3(this->x, this->y, this->z);
-}
-
-Vector3 Vector3::multiplyScalar(float scalar) const {
-    return *this * scalar;
-}
-
-void Vector3::print() const {
-    std::cout << *this << std::endl;
 }
 
 Vector3 operator*(float scalar, const Vector3& vector) {

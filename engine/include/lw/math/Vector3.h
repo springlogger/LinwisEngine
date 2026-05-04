@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <iosfwd>
 
@@ -34,16 +34,6 @@ public:
 
     void normalize();
     Vector3 normalized() const;
-
-    Vector3 clone() const;
-
-    Vector3 add(const Vector3& other) const;
-    Vector3 sub(const Vector3& other) const;
-    Vector3 multiplyScalar(float scalar) const;
-
-    Vector3 addScalar(const float scalar) const;
-
-    void print() const;
 };
 
 Vector3 operator*(float scalar, const Vector3& vector);

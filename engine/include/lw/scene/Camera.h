@@ -38,6 +38,9 @@ public:
     const Vector3 getForward() const;
     const Vector3 getRight() const;
 
+    float getNearPlane() const { return nearPlane; }
+    float getFarPlane() const { return farPlane; }
+
 private:
     Vector3 eye;
     Vector3 target;

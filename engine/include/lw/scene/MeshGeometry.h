@@ -11,7 +11,8 @@ namespace lw
 struct MeshVertex
 {
     Vector3 position;
-    // потом добавишь normal, uv, color
+    uint32_t color = 0;
+    // потом добавишь normal, uv
 };
 
 class MeshGeometry {
