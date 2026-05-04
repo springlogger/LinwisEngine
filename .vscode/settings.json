@@ -5,5 +5,7 @@
     ],
     "c-cpp-compile-run.cpp-flags": "-std=c++17 -Wall -Wextra -g ${workspaceFolder}/engine/*.cpp ${workspaceFolder}/math/*.cpp -lgdi32",
     "c-cpp-compile-run.run-in-external-terminal": true,
-    "c-cpp-compile-run.debugger-path": "C:\\Program1\\c++\\msys64\\ucrt64\\bin\\gdb.exe"
+    "c-cpp-compile-run.debugger-path": "C:\\Program1\\c++\\msys64\\ucrt64\\bin\\gdb.exe",
+
+    "cmake.cmakePath": "cmake"
 }

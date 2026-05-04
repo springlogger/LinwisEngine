@@ -12,13 +12,16 @@ No GPU API, no DirectX, no OpenGL. Every stage of the pipeline — vertex transf
 engine/
   include/lw/
     math/        — Vector3, Vector4, Matrix4, Quaternion, Plane
-    scene/       — Object3D, Camera, Mesh, LineSegments, MeshGeometry, LineGeometry
+    scene/       — Object3D, Camera, Mesh, LineSegments, MeshGeometry, LineGeometry, Scene
     graphics/    — Renderer, GraphicsTypes, Clip, Rasterizer, RenderTarget
-    helpers/     — AxesHelper
+    helpers/     — AxesHelper, LoadObj
     platform/    — Win32Window
-    core/        — LinwisEngine, DemoConfig
+    core/        — LinwisEngine, Application, DemoConfig
   src/           — implementations mirroring the include layout
   test/          — unit tests
+assets/          — .obj model files
+game/
+  game.cpp       — game entry point, extends Application
 ```
 
 Public headers are under `engine/include/lw/` and included as:
@@ -61,53 +64,68 @@ All pipeline types (`ClipVertex`, `ScreenVertex`, `ClipTriangle`, `ScreenTriangl
 
 ## Architecture
 
-The codebase separates concerns into four layers:
+The codebase separates concerns into five layers:
 
 | Layer | Responsibility |
 |---|---|
 | `math` | Linear algebra — vectors, matrices, quaternions |
-| `scene` | What exists in the world — objects, transforms, geometry |
+| `scene` | What exists in the world — objects, transforms, geometry, scene graph |
 | `graphics` | How things are drawn — clipping, rasterization, buffers |
 | `platform` | OS interface — window, input, framebuffer presentation |
+| `core` | Application lifecycle — engine loop, `Application` base class |
 
 `scene` has no dependency on `graphics`. A mesh knows nothing about how it is rasterized.
 
 The renderer dispatches on `PrimitiveType` (Triangles or Lines) and calls the appropriate pipeline path. New geometry types can be added without touching existing paths.
 
-## Dev mode
-
-`DemoConfig` in `Win32Main.cpp` controls engine configuration:
+`Scene` owns all objects as `unique_ptr<Object3D>` and returns raw pointers for external use. Adding an object:
 
 ```cpp
-lw::DemoConfig config;
-config.devMode = true;   // enables wireframe overlay
+lw::Mesh* mesh = scene.addObject(lw::loadObj("assets/suzane.obj"));
+mesh->setPosition(lw::Vector3(0, 0, 0));
+```
 
-lw::LinwisEngine engine(config);
+`Application` is the base class for a game. Override `onInit` to populate the scene and `onUpdate` for per-frame logic:
+
+```cpp
+class Game : public lw::Application {
+public:
+    Game(lw::DemoConfig cfg) : Application(cfg) {}
+
+    void onInit() override {
+        scene.addObject(lw::loadObj("assets/suzane.obj"));
+    }
+
+    void onUpdate(float dt, const lw::KeyboardInputState& kb, const lw::MouseInputState&) override {}
+};
+```
+
+## Dev mode
+
+`DemoConfig` in `game.cpp` controls engine configuration:
+
+```cpp
+lw::DemoConfig cfg;
+cfg.devMode = true;   // enables wireframe overlay
+
+Game game(cfg);
+game.run(hInstance, nCmdShow);
 ```
 
 In dev mode the renderer draws white wireframe edges over filled geometry, making polygon boundaries and clipping artifacts visible.
 
 ## Building
 
-**Requirements:** Windows, MSYS2 UCRT64, `g++`
+**Requirements:** Windows, MSYS2 UCRT64, `g++`, CMake ≥ 3.10, CMake Tools extension for VS Code
 
-**From VS Code:** `Ctrl+Shift+B` → `build-engine`, then `run-engine`
+**From VS Code:** `F7` to build. CMake Tools uses the preset defined in `CMakePresets.json` with the MSYS2 UCRT64 GCC compiler. Output goes to `out/build/LinwisEngine/Game.exe`.
 
-**Manual build:**
+**From terminal:**
 
 ```powershell
-C:/Program1/c++/msys64/ucrt64/bin/g++.exe -std=c++17 -Wall -Wextra -g `
-  engine/src/math/*.cpp `
-  engine/src/scene/*.cpp `
-  engine/src/graphics/*.cpp `
-  engine/src/helpers/*.cpp `
-  engine/src/platform/win32/Win32Main.cpp `
-  engine/src/platform/win32/Win32Window.cpp `
-  -I engine/include -lgdi32 `
-  -o engine/output/Win32Main.exe
+cmake --preset LinwisEngine
+cmake --build out/build/LinwisEngine
 ```
-
-Output: `engine/output/Win32Main.exe`
 
 ---
 
