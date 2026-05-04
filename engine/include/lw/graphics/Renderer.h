@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <lw/scene/Scene.h>
 #include <lw/graphics/RenderTarget.h>
 #include <lw/graphics/RenderableObject.h>
 #include <lw/scene/Object3D.h>
@@ -20,7 +21,7 @@ public:
     int width() const { return screenWidth; }
     int height() const { return screenHeight; }
 
-    void render(const std::vector<std::shared_ptr<Object3D>>& scene, const Camera& camera);
+    void render(const Scene& scene, const Camera& camera);
 
     void setWireframe(bool enabled) { wireframe = enabled; }
 

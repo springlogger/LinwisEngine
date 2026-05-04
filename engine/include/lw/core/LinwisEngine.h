@@ -1,5 +1,6 @@
 #pragma once
 
+#include <lw/scene/Scene.h>
 #include <lw/math/Math.h>
 #include <lw/graphics/Renderer.h>
 #include <lw/scene/Camera.h>
@@ -9,7 +10,6 @@
 
 #include <chrono>
 #include <vector>
-#include <memory>
 
 namespace lw
 {
@@ -26,6 +26,7 @@ struct DemoConfig {
 
 class LinwisEngine {
 public:
+    Scene scene;
     explicit LinwisEngine(const DemoConfig& config = DemoConfig{});
 
     void update(const KeyboardInputState& keyboard, const MouseInputState& mouse);
@@ -37,7 +38,6 @@ private:
     DemoConfig config;
     Renderer renderer;
     Camera camera;
-    std::vector<std::shared_ptr<Object3D>> scene;
 
     std::chrono::steady_clock::time_point previousFrameTime;
     float angle = 0.0f;

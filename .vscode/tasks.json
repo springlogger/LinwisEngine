@@ -16,15 +16,15 @@
         "${workspaceFolder}/engine/src/scene/*.cpp",
         "${workspaceFolder}/engine/src/graphics/*.cpp",
         "${workspaceFolder}/engine/src/helpers/*.cpp",
-        "${workspaceFolder}/engine/src/platform/win32/Win32Main.cpp",
         "${workspaceFolder}/engine/src/platform/win32/Win32Window.cpp",
+        "${workspaceFolder}/game/game.cpp",
 
         "-I", "${workspaceFolder}/engine/include",
 
         "-lgdi32",
 
         "-o",
-        "${workspaceFolder}/engine/output/Win32Main.exe"
+        "${workspaceFolder}/output/Game.exe"
       ],
       "options": {
         "shell": {
@@ -41,7 +41,7 @@
     {
       "label": "run-engine",
       "type": "shell",
-      "command": "${workspaceFolder}/engine/output/Win32Main.exe",
+      "command": "${workspaceFolder}/output/Game.exe",
       "dependsOn": "build-engine",
       "options": {
         "shell": {

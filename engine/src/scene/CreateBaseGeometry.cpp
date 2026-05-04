@@ -14,6 +14,7 @@ MeshGeometry createCubeGeometry(float width, float height, float depth)
     geometry.vertices =
     {
         // Front
+        // MeshVertex{ Vector3{-hx, -hy, hz} }
         {{-hx, -hy,  hz}}, // 0
         {{ hx, -hy,  hz}}, // 1
         {{-hx,  hy,  hz}}, // 2

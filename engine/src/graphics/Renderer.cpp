@@ -281,10 +281,10 @@ void Renderer::renderLineSegments(const LineSegments& lineSegments, const Camera
 }
 
 
-void Renderer::render(const std::vector<std::shared_ptr<Object3D>>& scene, const Camera& camera)
+void Renderer::render(const Scene& scene, const Camera& camera)
 {
     clearBuffer();
-    for (const auto& object : scene) {
+    for (const auto& object : scene.getObjects()) {
 
         const RenderableObject* renderableObject = dynamic_cast<const RenderableObject*>(object.get());
         

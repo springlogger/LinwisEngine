@@ -32,27 +32,14 @@ LinwisEngine::LinwisEngine(const DemoConfig& cfg)
       previousFrameTime(std::chrono::steady_clock::now())
 {
     renderer.setWireframe(config.devMode);
-
-    MeshGeometry cubeGeometry = createCubeGeometry(2.0f, 2.0f, 2.0f);
-
-    auto cube = std::make_unique<Mesh>(cubeGeometry, Material());
-    cube->setPosition(Vector3(0.0f, 0.0f, 0.0f));
-    cube->setRotation(Vector3(0.4f, 0.6f, 0.0f));
-    cube->setScale(Vector3(1.0f, 1.0f, 1.0f));
-
-    scene.push_back(std::move(cube));
-    scene.push_back(std::make_unique<AxesHelper>());
 }
 
+// TODO: Позволить пользоватедю создавать свой update
 void LinwisEngine::update(const KeyboardInputState& keyboard, const MouseInputState& mouse)
 {
     const auto now = std::chrono::steady_clock::now();
     const float dt = std::chrono::duration<float>(now - previousFrameTime).count();
     previousFrameTime = now;
-
-    angle += config.cubeAngularSpeed * dt;
-    scene[0]->setRotation(Vector3(0.4f, angle, 0.0f));
-    scene[0]->updateMatrix();
 
     if (mouse.isMouseLookActive && (mouse.dx != 0 || mouse.dy != 0)) {
         constexpr float sens = 0.001f;
