@@ -1,171 +1,144 @@
-﻿# LinwisEngine
+# LinwisEngine
 
 <img width="978" height="690" alt="изображение" src="https://github.com/user-attachments/assets/82152dc6-69f4-41f1-83ae-4766a00e727c" />
 
-A small C++17 software 3D renderer for Windows that draws into its own Win32 window using a CPU framebuffer and GDI blitting.
+A C++17 software 3D renderer for Windows. Renders entirely on the CPU into its own framebuffer, then presents it to a Win32 window via GDI.
+
+No GPU API, no DirectX, no OpenGL. Every stage of the pipeline — vertex transform, clipping, rasterization, depth testing — runs in plain C++ code you can read, step through with a debugger, and modify freely.
 
 ## Project layout
 
-- `engine/include/lw/` - public engine headers grouped by modules such as math, scene, graphics, helpers, and platform.
-- `engine/src/math/` - vector, matrix, quaternion, and math utility implementations.
-- `engine/src/scene/` - scene-level objects such as `Object3D`, `RenderableObject`, `Mesh`, `LineSegments`, `Camera`, and geometry classes.
-- `engine/src/graphics/` - renderer, framebuffer, render target, depth buffer, and software rasterization code.
-- `engine/src/helpers/` - helper scene objects such as `AxesHelper` and other debug-style objects.
-- `engine/src/platform/win32/` - Win32 entry point, window creation, message loop, input handling, and framebuffer presentation.
-- `engine/output/` - build output directory for the Windows executable.
-- `test/` - experimental or manual test files.
-
-## Current rendering model
-
-The engine renders into its own Win32 window.
-
-It currently uses:
-
-- a CPU-side framebuffer
-- a software renderer that writes pixels into that framebuffer
-- a Win32 window created through `windows.h`
-- `StretchDIBits` from `gdi32` to present the framebuffer into the window
-
-So the pipeline is roughly:
-
-1. scene data is updated on the CPU
-2. renderable scene objects are processed by the software renderer
-3. the renderer fills the framebuffer
-4. the Win32 layer copies the framebuffer into the window
-
-## Current architecture
-
-The codebase is organized into several modules:
-
-- `math` for vectors, matrices, quaternions, and math helpers
-- `scene` for scene objects and renderable entities such as meshes and line-based objects
-- `graphics` for the renderer, buffers, and rasterization pipeline
-- `helpers` for user-facing debug and visualization objects such as axes helpers
-- `platform/win32` for window creation, input, and presentation
-
-The scene layer and the graphics layer are intentionally separated:
-
-- `scene` describes what exists in the world
-- `graphics` describes how those objects are rendered
-
-This keeps scene objects, transforms, and geometry ownership separate from the low-level rendering pipeline.
-
-Public headers are placed under:
-
-```text
-engine/include/lw/
+```
+engine/
+  include/lw/
+    math/        — Vector3, Vector4, Matrix4, Quaternion, Plane
+    scene/       — Object3D, Camera, Mesh, LineSegments, MeshGeometry, LineGeometry
+    graphics/    — Renderer, GraphicsTypes, Clip, Rasterizer, RenderTarget
+    helpers/     — AxesHelper
+    platform/    — Win32Window
+    core/        — LinwisEngine, DemoConfig
+  src/           — implementations mirroring the include layout
+  test/          — unit tests
 ```
 
-and are intended to be included like this:
+Public headers are under `engine/include/lw/` and included as:
 
 ```cpp
 #include <lw/math/Vector3.h>
-#include <lw/scene/Object3D.h>
 #include <lw/scene/Mesh.h>
 #include <lw/graphics/Renderer.h>
-#include <lw/helpers/AxesHelper.h>
 ```
 
-## Scene model
+## Rendering pipeline
 
-The engine is being structured around scene objects rather than flat render-only data.
+Each frame runs through six discrete stages. Every stage is a pure function — takes an array, returns an array:
 
-The current design direction is:
+```
+1. Vertex processing
+   Model → World → View → Clip space
+   (ProcessVertex template, works for MeshVertex and LineVertex)
 
-- `Object3D` is the common base for transformable scene objects
-- `RenderableObject` extends `Object3D` for objects that can produce renderable data
-- `Mesh` represents triangle-based renderable geometry
-- `LineSegments` represents line-based renderable geometry
-- helpers such as `AxesHelper` are built on top of line-based scene objects
-- the renderer works with renderable object types rather than helper-specific classes
+2. Primitive assembly
+   Indexed vertices → ClipTriangle[] or ClipSegment[]
 
-## Building the project
+3. Clipping
+   Sutherland–Hodgman against 6 frustum planes (clip space)
+   → discards or trims geometry outside the view frustum
+   → fan-triangulates clipped polygons back into triangles
 
-The project is currently built with a VS Code task and `g++` from MSYS2 UCRT64.
+4. Perspective divide + viewport transform
+   Clip space → NDC → Screen space (ScreenTriangle[] or ScreenSegment[])
 
-### Requirements
+5. Rasterization
+   Triangle: edge function, barycentric interpolation, per-pixel depth test
+   Line: Bresenham algorithm
 
-- Windows
-- MSYS2 with the UCRT64 toolchain
-- `g++`
-- VS Code with tasks support
-
-Current compiler path used by the project:
-
-```text
-C:/Program1/c++/msys64/ucrt64/bin/g++.exe
+6. Wireframe pass (dev mode only)
+   Draws triangle edges on top of the filled geometry
 ```
 
-If your MSYS2 installation is located elsewhere, update the path in `tasks.json`.
+All pipeline types (`ClipVertex`, `ScreenVertex`, `ClipTriangle`, `ScreenTriangle`, `ClipSegment`, `ScreenSegment`) are declared in `GraphicsTypes.h`.
 
-### Build from VS Code
+## Architecture
 
-Use:
+The codebase separates concerns into four layers:
 
-- `Terminal -> Run Task -> build-engine`
-- or `Ctrl+Shift+B`
+| Layer | Responsibility |
+|---|---|
+| `math` | Linear algebra — vectors, matrices, quaternions |
+| `scene` | What exists in the world — objects, transforms, geometry |
+| `graphics` | How things are drawn — clipping, rasterization, buffers |
+| `platform` | OS interface — window, input, framebuffer presentation |
 
-This compiles the engine sources and produces:
+`scene` has no dependency on `graphics`. A mesh knows nothing about how it is rasterized.
 
-```text
-engine/output/Win32Main.exe
+The renderer dispatches on `PrimitiveType` (Triangles or Lines) and calls the appropriate pipeline path. New geometry types can be added without touching existing paths.
+
+## Dev mode
+
+`DemoConfig` in `Win32Main.cpp` controls engine configuration:
+
+```cpp
+lw::DemoConfig config;
+config.devMode = true;   // enables wireframe overlay
+
+lw::LinwisEngine engine(config);
 ```
 
-### Run from VS Code
+In dev mode the renderer draws white wireframe edges over filled geometry, making polygon boundaries and clipping artifacts visible.
 
-Use:
+## Building
 
-- `Terminal -> Run Task -> run-engine`
+**Requirements:** Windows, MSYS2 UCRT64, `g++`
 
-This runs the built executable.
+**From VS Code:** `Ctrl+Shift+B` → `build-engine`, then `run-engine`
 
-### Current build layout
-
-The build task currently compiles source files from:
-
-- `engine/src/math/`
-- `engine/src/scene/`
-- `engine/src/graphics/`
-- `engine/src/helpers/`
-- `engine/src/platform/win32/`
-
-and links against:
-
-- `gdi32`
-
-## Build command
-
-Equivalent command to the current `tasks.json`:
+**Manual build:**
 
 ```powershell
-C:/Program1/c++/msys64/ucrt64/bin/g++.exe ^
-  -std=c++17 ^
-  -Wall ^
-  -Wextra ^
-  -g ^
-  engine/src/math/*.cpp ^
-  engine/src/scene/*.cpp ^
-  engine/src/graphics/*.cpp ^
-  engine/src/helpers/*.cpp ^
-  engine/src/platform/win32/Win32Main.cpp ^
-  engine/src/platform/win32/Win32Window.cpp ^
-  -I engine/include ^
-  -lgdi32 ^
+C:/Program1/c++/msys64/ucrt64/bin/g++.exe -std=c++17 -Wall -Wextra -g `
+  engine/src/math/*.cpp `
+  engine/src/scene/*.cpp `
+  engine/src/graphics/*.cpp `
+  engine/src/helpers/*.cpp `
+  engine/src/platform/win32/Win32Main.cpp `
+  engine/src/platform/win32/Win32Window.cpp `
+  -I engine/include -lgdi32 `
   -o engine/output/Win32Main.exe
 ```
 
-Or in one line:
+Output: `engine/output/Win32Main.exe`
 
-```powershell
-C:/Program1/c++/msys64/ucrt64/bin/g++.exe -std=c++17 -Wall -Wextra -g engine/src/math/*.cpp engine/src/scene/*.cpp engine/src/graphics/*.cpp engine/src/helpers/*.cpp engine/src/platform/win32/Win32Main.cpp engine/src/platform/win32/Win32Window.cpp -I engine/include -lgdi32 -o engine/output/Win32Main.exe
-```
+---
 
-## Notes
+## CPU rasterization: tradeoffs
 
-The project is still evolving, and the structure is being gradually moved toward a cleaner engine layout with:
+Software renderers occupy a well-defined niche. Understanding their tradeoffs helps clarify when they are and are not the right tool.
 
-- module-based source directories
-- public headers under `engine/include/lw`
-- clearer separation between engine internals and user-facing API
-- separate scene and graphics layers
-- scene objects that can be reused both by the engine and by user code
+### Advantages
+
+**Full pipeline visibility.** Every stage runs as ordinary C++ code. There is no driver abstraction layer, no SPIR-V or HLSL compilation, no opaque state machine. A debugger breakpoint inside `drawFilledTriangle` is as useful as one anywhere else. This makes the renderer useful as a reference implementation and as a learning tool.
+
+**Deterministic execution.** GPU workloads are scheduled by a driver and executed in a way that depends on hardware, driver version, and workload shape. A CPU rasterizer produces the same output on every run on every machine, with no variance introduced by shader compiler optimizations or tile ordering.
+
+**No GPU memory management.** There are no upload heaps, descriptor sets, staging buffers, or synchronization primitives between CPU and GPU timelines. Geometry lives in regular heap memory, is read by the same CPU that submitted it, and is freed normally.
+
+**Algorithmic freedom.** Hardware rasterizers expose a fixed interface. A software rasterizer can implement any traversal order, any interpolation scheme, or any custom coverage rule without being limited to what the GPU API exposes. This is relevant for research into non-standard rendering algorithms.
+
+**Zero external dependencies for rendering.** The engine links only against `gdi32` for window presentation. There is no DirectX SDK, no Vulkan loader, no OpenGL driver requirement. It compiles and runs on any Windows machine with a C++ compiler.
+
+### Limitations
+
+**Fill rate.** Rasterization cost scales linearly with the number of pixels a triangle covers. A single triangle filling an 800×600 screen requires ~480,000 iterations of the inner loop, each performing edge function evaluations, depth interpolation, and memory writes. GPU rasterizers execute these iterations in parallel across thousands of shader units. On a single CPU thread, a frame with large screen-filling triangles is noticeably more expensive than the same frame viewed from a distance.
+
+**No hardware parallelism.** A modern GPU has thousands of shader invocations running concurrently. A single-threaded CPU rasterizer has one. Even with multithreading, a CPU offers tens of threads, not thousands. This gap is fundamental and grows as display resolution increases.
+
+**Memory bandwidth.** GPU memory subsystems are designed for the access pattern of rasterization — concurrent reads and writes across a large framebuffer. CPU caches are optimized for sequential access and temporal reuse. Per-pixel depth reads and writes in a non-cache-friendly order cause frequent cache misses at high resolutions.
+
+**Practical scene complexity ceiling.** Because of the above, a CPU rasterizer becomes frame-rate limited at scene complexities that a GPU handles with headroom. This makes it unsuitable for production rendering of complex scenes, but does not affect its utility as a rendering study tool or a reference for small scenes.
+
+**No texture hardware.** GPU texture units perform bilinear and trilinear filtering in dedicated silicon at effectively zero pipeline cost. A software implementation of the same operations is expensive and competes for the same CPU cycles as rasterization.
+
+### When it makes sense
+
+A CPU rasterizer is appropriate when correctness, inspectability, and algorithmic control matter more than throughput — for studying rasterization, implementing novel algorithms, or building a renderer where the pipeline itself is the subject of interest rather than a means to an end.
