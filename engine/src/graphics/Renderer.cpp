@@ -175,11 +175,11 @@ void Renderer::renderMesh(const Mesh& mesh, const Camera& camera)
         );
 
     // 5. Rasterization
-    RasterizeTriangles(renderTarget, screenTriangles, 0x00000033);
+    RasterizeTriangles(renderTarget, screenTriangles, 0x00B4B4B4);
 
     // 6. Wireframe pass
     if (wireframe) {
-        RasterizeWireframe(renderTarget, screenTriangles, 0x00FFFFFF);
+        RasterizeWireframe(renderTarget, screenTriangles, 0x00484848);
     }
 }
 
