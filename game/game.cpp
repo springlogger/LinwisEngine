@@ -16,6 +16,7 @@ public:
         suzane->setPosition(lw::Vector3(0.0f, 0.0f, 0.0f));
         suzane->setRotation(lw::Vector3(0.4f, 0.6f, 0.0f));
         suzane->setScale(lw::Vector3(1.0f, 1.0f, 1.0f));
+        suzane->setTexture(lw::assetPath("test_texture.png"));
 
         lw::AxesHelper* axes = scene.addObject(lw::AxesHelper());
         axes->setScale(lw::Vector3(10.0f, 10.0f, 10.0f));

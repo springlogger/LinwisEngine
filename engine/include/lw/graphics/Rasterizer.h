@@ -2,6 +2,8 @@
 
 #include <lw/graphics/GraphicsTypes.h>
 #include <lw/graphics/RenderTarget.h>
+#include <lw/graphics/Texture.h>
+
 
 #include <vector>
 #include <cstdint>
@@ -12,6 +14,7 @@ namespace lw
 void RasterizeTriangles(
     RenderTarget& renderTarget,
     const std::vector<ScreenTriangle>& triangles,
+    const Texture& texture,
     uint32_t color);
 
 void RasterizeWireframe(

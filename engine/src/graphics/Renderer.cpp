@@ -2,6 +2,8 @@
 #include <lw/graphics/Clip.h>
 #include <lw/graphics/Rasterizer.h>
 
+#include <type_traits>
+
 namespace lw {
 
 Renderer::Renderer()
@@ -41,6 +43,9 @@ static ScreenVertex ToScreenVertex(
     out.x = (xNdc + 1.0f) * 0.5f * static_cast<float>(screenWidth);
     out.y = (1.0f - yNdc) * 0.5f * static_cast<float>(screenHeight);
     out.z = zNdc;
+    out.invW   = invW;
+    out.uOverW = v.uv.x * invW;
+    out.vOverW = v.uv.y * invW;
 
     return out;
 }
@@ -119,6 +124,9 @@ static ClipVertex ProcessVertex(
     ClipVertex out;
     out.clipPosition = clip;
     out.color = vertex.color;
+    if constexpr (std::is_same_v<TVertex, MeshVertex>) {
+        out.uv = vertex.uv;
+    }
 
     return out;
 }
@@ -175,7 +183,7 @@ void Renderer::renderMesh(const Mesh& mesh, const Camera& camera)
         );
 
     // 5. Rasterization
-    RasterizeTriangles(renderTarget, screenTriangles, 0x00B4B4B4);
+    RasterizeTriangles(renderTarget, screenTriangles, mesh.getMaterial().getTexture(), 0x00B4B4B4);
 
     // 6. Wireframe pass
     if (wireframe) {

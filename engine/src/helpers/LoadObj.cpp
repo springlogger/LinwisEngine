@@ -11,7 +11,7 @@
 namespace lw
 {
 
-Mesh loadObj(std::string filename)
+Mesh loadObj(const std::string& filename)
 {
     if (filename.substr(filename.find_last_of(".") + 1) != "obj")
         return Mesh({}, Material());
@@ -67,7 +67,7 @@ Mesh loadObj(std::string filename)
                 auto it = vertexCache.find(tokens[i]);
                 if (it != vertexCache.end())
                 {
-                    faceIndices[i] = it->second; // сохраняем индекс из словаря
+                    faceIndices[i] = it->second;
                 }
                 else
                 {
@@ -75,9 +75,9 @@ Mesh loadObj(std::string filename)
                     sscanf(tokens[i], "%d/%d/%d", &posIdx, &uvIdx, &normalIdx);
 
                     MeshVertex vertex;
-                    if (posIdx > 0)                        vertex.position = positions[posIdx - 1];
+                    if (posIdx > 0)                            vertex.position = positions[posIdx - 1];
                     if (uvIdx > 0 && !tuxtureCoords.empty())   vertex.uv       = tuxtureCoords[uvIdx - 1];
-                    if (normalIdx > 0 && !normals.empty()) vertex.normal   = normals[normalIdx - 1];
+                    if (normalIdx > 0 && !normals.empty())     vertex.normal   = normals[normalIdx - 1];
 
                     uint32_t newIndex = static_cast<uint32_t>(uniqueVertices.size());
                     uniqueVertices.push_back(vertex);
@@ -86,7 +86,6 @@ Mesh loadObj(std::string filename)
                 }
             }
 
-            // First triangle
             indices.push_back(faceIndices[0]);
             indices.push_back(faceIndices[1]);
             indices.push_back(faceIndices[2]);
@@ -106,6 +105,13 @@ Mesh loadObj(std::string filename)
     geometry.indices  = indices;
 
     return Mesh(geometry, Material());
+}
+
+Mesh loadObj(const std::string& filename, const std::string& texturePath)
+{
+    Mesh mesh = loadObj(filename);
+    mesh.setTexture(texturePath);
+    return mesh;
 }
 
 } // namespace lw

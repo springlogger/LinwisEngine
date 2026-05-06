@@ -46,9 +46,9 @@ static ClipVertex LerpClipVertex(
     ClipVertex out;
 
     out.clipPosition = a.clipPosition + (b.clipPosition - a.clipPosition) * t;
-
-    // TODO: interpolate UV, normal when added
     out.color = a.color;
+    out.uv.x = a.uv.x + (b.uv.x - a.uv.x) * t;
+    out.uv.y = a.uv.y + (b.uv.y - a.uv.y) * t;
 
     return out;
 }

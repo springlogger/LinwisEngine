@@ -82,10 +82,19 @@ The renderer dispatches on `PrimitiveType` (Triangles or Lines) and calls the ap
 
 ```cpp
 lw::Mesh* mesh = scene.addObject(lw::loadObj(lw::assetPath("suzane.obj")));
+mesh->setTexture(lw::assetPath("test_texture.png"));
 mesh->setPosition(lw::Vector3(0, 0, 0));
 ```
 
 Include `<lw/core/Paths.h>`, then use `lw::assetPath("file.obj")` for files inside `assets/`, or `lw::projectPath("relative/path")` for paths relative to the project root.
+
+Textures can be assigned after mesh creation with `Mesh::setTexture(...)`, or directly when loading an OBJ:
+
+```cpp
+lw::Mesh* mesh = scene.addObject(
+    lw::loadObj(lw::assetPath("suzane.obj"), lw::assetPath("test_texture.png"))
+);
+```
 
 `Application` is the base class for a game. Override `onInit` to populate the scene and `onUpdate` for per-frame logic:
 

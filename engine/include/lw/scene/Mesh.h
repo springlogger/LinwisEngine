@@ -6,27 +6,30 @@
 #include <lw/scene/Material.h>
 #include <lw/graphics/RenderableObject.h>
 
-namespace lw 
+#include <string>
+
+namespace lw
 {
 
 class Mesh : public RenderableObject {
-
 public:
-  Mesh();
-  Mesh(MeshGeometry geometry, Material material);
+    Mesh();
+    Mesh(MeshGeometry geometry, Material material);
 
-  bool hasGeometry() const { return !geometry.vertices.empty() && !geometry.indices.empty(); };
+    bool hasGeometry() const { return !geometry.vertices.empty() && !geometry.indices.empty(); }
 
-  const MeshGeometry& getGeometry() const { return geometry; };
-  const Material& getMaterial() const { return material; };
+    const MeshGeometry& getGeometry() const { return geometry; }
+    const Material&     getMaterial() const { return material; }
 
-  PrimitiveType getPrimitiveType() const override { return PrimitiveType::Triangles; };
+    PrimitiveType getPrimitiveType() const override { return PrimitiveType::Triangles; }
+
+    void setMaterial(Material mat);
+    void setTexture(const std::string& path);
+    void setTexture(Texture texture);
 
 protected:
-
-  MeshGeometry geometry;
-  Material material;
-
+    MeshGeometry geometry;
+    Material     material;
 };
 
-}
+} // namespace lw

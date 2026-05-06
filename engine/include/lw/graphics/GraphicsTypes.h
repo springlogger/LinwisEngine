@@ -1,5 +1,6 @@
 #pragma once
 
+#include <lw/math/Vector2.h>
 #include <lw/math/Vector4.h>
 
 #include <cstdint>
@@ -11,6 +12,7 @@ struct ClipVertex
 {
     Vector4 clipPosition;
     uint32_t color = 0;
+    Vector2 uv;
 };
 
 struct ClipTriangle
@@ -25,6 +27,9 @@ struct ScreenVertex
     float x = 0.0f;
     float y = 0.0f;
     float z = 0.0f;
+    float invW   = 0.0f;
+    float uOverW = 0.0f;
+    float vOverW = 0.0f;
 };
 
 struct ScreenTriangle

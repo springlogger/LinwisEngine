@@ -6,6 +6,37 @@
 namespace lw
 {
 
+static float SrgbToLinear(float c) {
+    return c <= 0.04045f ? c / 12.92f : std::pow((c + 0.055f) / 1.055f, 2.4f);
+}
+
+uint32_t SampleTexture(const Texture& texture, float u, float v) {
+    u = std::clamp(u, 0.0f, 1.0f);
+    v = std::clamp(v, 0.0f, 1.0f);
+
+    int x = static_cast<int>(u * (texture.getWidth()  - 1));
+    int y = static_cast<int>(v * (texture.getHeight() - 1));
+
+    // stb_image RGBA в памяти → little-endian uint32_t: биты [7:0]=R [15:8]=G [23:16]=B [31:24]=A
+    const uint32_t packed = texture.getPixels()[y * texture.getWidth() + x];
+    float r = ((packed >>  0) & 0xFF) / 255.0f;
+    float g = ((packed >>  8) & 0xFF) / 255.0f;
+    float b = ((packed >> 16) & 0xFF) / 255.0f;
+
+    if (true) {
+        r = SrgbToLinear(r);
+        g = SrgbToLinear(g);
+        b = SrgbToLinear(b);
+    }
+
+    // Windows GDI BI_RGB 32-bit: в памяти [B, G, R, X] → uint32_t: 0x00RRGGBB
+    const auto u8 = [](float f) {
+        return static_cast<uint32_t>(std::clamp(f, 0.0f, 1.0f) * 255.0f + 0.5f) & 0xFF;
+    };
+    return (u8(r) << 16) | (u8(g) << 8) | u8(b);
+}
+
+// векторное AB * AP
 static float EdgeFunction(
     float ax, float ay,
     float bx, float by,
@@ -17,6 +48,7 @@ static float EdgeFunction(
 static void DrawFilledTriangle(
     const ScreenTriangle& triangle,
     RenderTarget& renderTarget,
+    const Texture& texture,
     uint32_t color)
 {
     const ScreenVertex& v0 = triangle.v0;
@@ -24,7 +56,9 @@ static void DrawFilledTriangle(
     const ScreenVertex& v2 = triangle.v2;
 
     const float area = EdgeFunction(v0.x, v0.y, v1.x, v1.y, v2.x, v2.y);
-    if (std::abs(area) < 1e-6f || area < 0.0f) {
+    // Y-flip in viewport inverts winding: CCW models become CW on screen (area < 0)
+    if (std::abs(area) < 1e-6f || area > 0.0f) {
+        //backface culling
         return;
     }
 
@@ -49,14 +83,16 @@ static void DrawFilledTriangle(
     {
         for (int x = minX; x <= maxX; ++x)
         {
+            // берём именно центр пикселя (по конвенции)
             const float px = static_cast<float>(x) + 0.5f;
             const float py = static_cast<float>(y) + 0.5f;
 
+            // обычно модели хранят именно CCW порядок вершин
             const float w0 = EdgeFunction(v1.x, v1.y, v2.x, v2.y, px, py);
             const float w1 = EdgeFunction(v2.x, v2.y, v0.x, v0.y, px, py);
             const float w2 = EdgeFunction(v0.x, v0.y, v1.x, v1.y, px, py);
 
-            if (w0 < 0.0f || w1 < 0.0f || w2 < 0.0f) {
+            if (w0 > 0.0f || w1 > 0.0f || w2 > 0.0f) {
                 continue;
             }
 
@@ -69,10 +105,23 @@ static void DrawFilledTriangle(
                 beta  * v1.z +
                 gamma * v2.z;
 
+            const float interpInvW =
+                alpha * v0.invW + beta * v1.invW + gamma * v2.invW;
+            const float u =
+                (alpha * v0.uOverW + beta * v1.uOverW + gamma * v2.uOverW) / interpInvW;
+            const float v =
+                (alpha * v0.vOverW + beta * v1.vOverW + gamma * v2.vOverW) / interpInvW;
+
+            const uint32_t text_color = SampleTexture(texture, u, v);
+
             if (depth < renderTarget.depth.At(x, y))
             {
                 renderTarget.depth.At(x, y) = depth;
-                renderTarget.color.PutPixel(x, y, color);
+                if (text_color) {
+                    renderTarget.color.PutPixel(x, y, text_color);
+                } else {
+                    renderTarget.color.PutPixel(x, y, color);
+                }
             }
         }
     }
@@ -143,11 +192,12 @@ void RasterizeWireframe(
 void RasterizeTriangles(
     RenderTarget& renderTarget,
     const std::vector<ScreenTriangle>& triangles,
+    const Texture& texture,
     uint32_t color)
 {
     for (const ScreenTriangle& triangle : triangles)
     {
-        DrawFilledTriangle(triangle, renderTarget, color);
+        DrawFilledTriangle(triangle, renderTarget, texture, color);
     }
 }
 
