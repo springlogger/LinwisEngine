@@ -4,6 +4,7 @@
 #include <lw/scene/Scene.h>
 #include <lw/platform/win32/Win32Window.h>
 
+
 namespace lw {
 
 class Application {
