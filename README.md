@@ -81,9 +81,11 @@ The renderer dispatches on `PrimitiveType` (Triangles or Lines) and calls the ap
 `Scene` owns all objects as `unique_ptr<Object3D>` and returns raw pointers for external use. Adding an object:
 
 ```cpp
-lw::Mesh* mesh = scene.addObject(lw::loadObj("assets/suzane.obj"));
+lw::Mesh* mesh = scene.addObject(lw::loadObj(lw::assetPath("suzane.obj")));
 mesh->setPosition(lw::Vector3(0, 0, 0));
 ```
+
+Include `<lw/core/Paths.h>`, then use `lw::assetPath("file.obj")` for files inside `assets/`, or `lw::projectPath("relative/path")` for paths relative to the project root.
 
 `Application` is the base class for a game. Override `onInit` to populate the scene and `onUpdate` for per-frame logic:
 
@@ -93,7 +95,7 @@ public:
     Game(lw::DemoConfig cfg) : Application(cfg) {}
 
     void onInit() override {
-        scene.addObject(lw::loadObj("assets/suzane.obj"));
+        scene.addObject(lw::loadObj(lw::assetPath("suzane.obj")));
     }
 
     void onUpdate(float dt, const lw::KeyboardInputState& kb, const lw::MouseInputState&) override {}

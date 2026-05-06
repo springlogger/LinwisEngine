@@ -1,4 +1,5 @@
 #include <lw/core/Application.h>
+#include <lw/core/Paths.h>
 #include <lw/helpers/LoadObj.h>
 #include <lw/helpers/AxesHelper.h>
 #include <lw/math/Vector3.h>
@@ -11,7 +12,7 @@ public:
 
     void onInit() override
     {
-        lw::Mesh* suzane = scene.addObject(lw::loadObj("C:/Program1/c++/LinwisEngine/assets/suzane.obj"));
+        lw::Mesh* suzane = scene.addObject(lw::loadObj(lw::assetPath("suzane.obj")));
         suzane->setPosition(lw::Vector3(0.0f, 0.0f, 0.0f));
         suzane->setRotation(lw::Vector3(0.4f, 0.6f, 0.0f));
         suzane->setScale(lw::Vector3(1.0f, 1.0f, 1.0f));

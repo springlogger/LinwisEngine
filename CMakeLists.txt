@@ -16,8 +16,17 @@ file(GLOB ENGINE_SOURCES
 )
 file(GLOB GAME_SOURCES "game/game.cpp")
 
+configure_file(
+    "${PROJECT_SOURCE_DIR}/engine/include/lw/core/PathsConfig.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/lw/core/PathsConfig.h"
+    @ONLY
+)
+
 add_executable(Game ${ENGINE_SOURCES} ${GAME_SOURCES})
 
-target_include_directories(Game PRIVATE "${PROJECT_SOURCE_DIR}/engine/include")
+target_include_directories(Game PRIVATE
+    "${PROJECT_SOURCE_DIR}/engine/include"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated"
+)
 
 target_link_libraries(Game PRIVATE gdi32)

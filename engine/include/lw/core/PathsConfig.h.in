@@ -1,0 +1,4 @@
+#pragma once
+
+#define LW_PROJECT_ROOT "@PROJECT_SOURCE_DIR@"
+#define LW_ASSETS_DIR "@PROJECT_SOURCE_DIR@/assets"
