@@ -2,6 +2,7 @@
 #include <lw/core/Paths.h>
 #include <lw/helpers/LoadObj.h>
 #include <lw/helpers/AxesHelper.h>
+#include <lw/graphics/Light.h>
 #include <lw/math/Vector3.h>
 
 #include <windows.h>
@@ -25,6 +26,14 @@ public:
 
         // --- Назначить текстуру после создания ---
         suzane->setTexture(lw::assetPath("test_texture.png"));
+
+        lw::DirectionalLight keyLight;
+        keyLight.direction = lw::Vector3(-0.4f, -0.7f, -0.6f);
+        keyLight.ambient = 0.35f;
+        keyLight.diffuseStrength = 0.75f;
+        keyLight.specularStrength = 0.25f;
+        keyLight.shininess = 48.0f;
+        scene.setDirectionalLight(keyLight);
 
         // --- Полная замена материала ---
         // suzane->setMaterial(lw::Material("assets/my_texture.png"));

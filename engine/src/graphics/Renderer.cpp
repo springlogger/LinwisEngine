@@ -47,6 +47,9 @@ static ScreenVertex ToScreenVertex(
     out.uOverW = v.uv.x * invW;
     out.vOverW = v.uv.y * invW;
 
+    out.worldPositionOverW = v.worldPosition * invW;
+    out.normalOverW = v.normal * invW;
+
     return out;
 }
 
@@ -125,7 +128,11 @@ static ClipVertex ProcessVertex(
     out.clipPosition = clip;
     out.color = vertex.color;
     if constexpr (std::is_same_v<TVertex, MeshVertex>) {
+        const Vector3 worldNormal = model.transformVector(vertex.normal).normalized();
+
         out.uv = vertex.uv;
+        out.normal = worldNormal;
+        out.worldPosition = world;
     }
 
     return out;
@@ -134,7 +141,7 @@ static ClipVertex ProcessVertex(
 template<typename TVertex>
 static std::vector<ClipVertex> ProcessVertices(
     const std::vector<TVertex>& vertices,
-    const Matrix4& model,
+    const Matrix4& modelMatrix,
     const Camera& camera)
 {
     std::vector<ClipVertex> output;
@@ -145,13 +152,13 @@ static std::vector<ClipVertex> ProcessVertices(
 
     for (const TVertex& vertex : vertices)
     {
-        output.push_back(ProcessVertex(vertex, model, view, projection));
+        output.push_back(ProcessVertex(vertex, modelMatrix, view, projection));
     }
 
     return output;
 }
 
-void Renderer::renderMesh(const Mesh& mesh, const Camera& camera)
+void Renderer::renderMesh(const Mesh& mesh, const Camera& camera, const DirectionalLight* light)
 {
     const MeshGeometry& geometry = mesh.getGeometry();
 
@@ -183,7 +190,7 @@ void Renderer::renderMesh(const Mesh& mesh, const Camera& camera)
         );
 
     // 5. Rasterization
-    RasterizeTriangles(renderTarget, screenTriangles, mesh.getMaterial().getTexture(), 0x00B4B4B4);
+    RasterizeTriangles(renderTarget, screenTriangles, mesh.getMaterial().getTexture(), 0x00B4B4B4, light, camera.getEye());
 
     // 6. Wireframe pass
     if (wireframe) {
@@ -302,7 +309,9 @@ void Renderer::render(const Scene& scene, const Camera& camera)
         {
         case PrimitiveType::Triangles: {
             const auto* mesh = static_cast<const Mesh*>(renderableObject);
-            renderMesh(*mesh, camera);
+            const DirectionalLight* light =
+                scene.hasDirectionalLight() ? &scene.getDirectionalLight() : nullptr;
+            renderMesh(*mesh, camera, light);
 
             break;
         }

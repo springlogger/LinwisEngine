@@ -13,13 +13,14 @@ engine/
   include/lw/
     math/        — Vector3, Vector4, Matrix4, Quaternion, Plane
     scene/       — Object3D, Camera, Mesh, LineSegments, MeshGeometry, LineGeometry, Scene
-    graphics/    — Renderer, GraphicsTypes, Clip, Rasterizer, RenderTarget
+    graphics/    — Renderer, GraphicsTypes, Clip, Rasterizer, Light, RenderTarget
     helpers/     — AxesHelper, LoadObj
     platform/    — Win32Window
     core/        — LinwisEngine, Application, DemoConfig
   src/           — implementations mirroring the include layout
   test/          — unit tests
 assets/          — .obj model files
+docs/            — renderer notes and implementation writeups
 game/
   game.cpp       — game entry point, extends Application
 ```
@@ -53,7 +54,7 @@ Each frame runs through six discrete stages. Every stage is a pure function — 
    Clip space → NDC → Screen space (ScreenTriangle[] or ScreenSegment[])
 
 5. Rasterization
-   Triangle: edge function, barycentric interpolation, per-pixel depth test
+   Triangle: edge function, perspective-correct interpolation, optional per-pixel lighting, per-pixel depth test
    Line: Bresenham algorithm
 
 6. Wireframe pass (dev mode only)
@@ -61,6 +62,48 @@ Each frame runs through six discrete stages. Every stage is a pure function — 
 ```
 
 All pipeline types (`ClipVertex`, `ScreenVertex`, `ClipTriangle`, `ScreenTriangle`, `ClipSegment`, `ScreenSegment`) are declared in `GraphicsTypes.h`.
+
+## Lighting
+
+The renderer supports optional per-pixel Blinn-Phong lighting. If a scene does not define a light, meshes are rendered unlit using their texture color. If a directional light is set on the scene, the rasterizer reconstructs the pixel normal and world position with perspective-correct interpolation, then applies ambient, diffuse, and specular lighting.
+
+Lighting data flows through the same software pipeline as UVs:
+
+```
+MeshVertex normal + position
+  -> ClipVertex world normal + world position
+  -> clipping interpolates new vertex attributes
+  -> ScreenVertex stores normal/worldPosition divided by W
+  -> Rasterizer reconstructs per-pixel normal/worldPosition
+  -> DirectionalLight::applyLight(...)
+```
+
+Create a directional light from `game.cpp`:
+
+```cpp
+#include <lw/graphics/Light.h>
+
+lw::DirectionalLight keyLight;
+keyLight.direction = lw::Vector3(-0.4f, -0.7f, -0.6f);
+keyLight.ambient = 0.35f;
+keyLight.diffuseStrength = 0.75f;
+keyLight.specularStrength = 0.25f;
+keyLight.shininess = 48.0f;
+scene.setDirectionalLight(keyLight);
+```
+
+The current lighting model is:
+
+```text
+finalColor = textureColor * (ambient + diffuse) + lightColor * specular
+diffuse    = max(0, dot(normal, lightDir))
+specular   = pow(max(0, dot(normal, halfDir)), shininess) * specularStrength
+halfDir    = normalize(lightDir + viewDir)
+```
+
+OBJ loading also recalculates smooth normals by shared vertex position. This makes models exported with flat shading, such as Suzanne with `s 0`, respond to per-pixel lighting as a smooth surface instead of lighting only a few individual faces.
+
+See `docs/lighting_notes.md` for the full lighting writeup: formulas, implementation details, coordinate-space rules, model-normal pitfalls, point/spot light extensions, gamma notes, and debugging checklists.
 
 ## Architecture
 

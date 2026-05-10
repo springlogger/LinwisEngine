@@ -49,7 +49,8 @@ static void DrawFilledTriangle(
     const ScreenTriangle& triangle,
     RenderTarget& renderTarget,
     const Texture& texture,
-    uint32_t color)
+    const DirectionalLight* light,
+    const Vector3& cameraPosition)
 {
     const ScreenVertex& v0 = triangle.v0;
     const ScreenVertex& v1 = triangle.v1;
@@ -112,16 +113,28 @@ static void DrawFilledTriangle(
             const float v =
                 (alpha * v0.vOverW + beta * v1.vOverW + gamma * v2.vOverW) / interpInvW;
 
-            const uint32_t text_color = SampleTexture(texture, u, v);
+            Vector3 interpolatedNormal =
+                (v0.normalOverW * alpha +
+                v1.normalOverW * beta +
+                v2.normalOverW * gamma) / interpInvW;
+
+            interpolatedNormal.normalize();
+
+            Vector3 worldPosition =
+                (v0.worldPositionOverW * alpha +
+                v1.worldPositionOverW * beta +
+                v2.worldPositionOverW * gamma) / interpInvW;
+
+            const uint32_t pixelTextureColor = SampleTexture(texture, u, v);
+            const uint32_t pixelColor = light
+                ? light->applyLight(cameraPosition, worldPosition, interpolatedNormal, pixelTextureColor)
+                : pixelTextureColor;
+
 
             if (depth < renderTarget.depth.At(x, y))
             {
                 renderTarget.depth.At(x, y) = depth;
-                if (text_color) {
-                    renderTarget.color.PutPixel(x, y, text_color);
-                } else {
-                    renderTarget.color.PutPixel(x, y, color);
-                }
+                renderTarget.color.PutPixel(x, y, pixelColor);
             }
         }
     }
@@ -193,11 +206,15 @@ void RasterizeTriangles(
     RenderTarget& renderTarget,
     const std::vector<ScreenTriangle>& triangles,
     const Texture& texture,
-    uint32_t color)
+    uint32_t color,
+    const DirectionalLight* light,
+    const Vector3& cameraPosition)
 {
+    (void)color;
+
     for (const ScreenTriangle& triangle : triangles)
     {
-        DrawFilledTriangle(triangle, renderTarget, texture, color);
+        DrawFilledTriangle(triangle, renderTarget, texture, light, cameraPosition);
     }
 }
 

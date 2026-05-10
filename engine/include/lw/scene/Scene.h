@@ -1,6 +1,7 @@
 #pragma once
 
 #include <lw/scene/Object3D.h>
+#include <lw/graphics/Light.h>
 
 #include <vector>
 #include <memory>
@@ -26,9 +27,14 @@ public:
 
   std::vector<std::shared_ptr<Object3D>> getObjects() const { return objects; }
 
+  void setDirectionalLight(const DirectionalLight& l) { directionalLight = l; hasLight = true; }
+  bool hasDirectionalLight() const { return hasLight; }
+  const DirectionalLight& getDirectionalLight() const { return directionalLight; }
 
 private:
   std::vector<std::shared_ptr<Object3D>> objects;
+  DirectionalLight directionalLight;
+  bool hasLight = false;
 };
 
 

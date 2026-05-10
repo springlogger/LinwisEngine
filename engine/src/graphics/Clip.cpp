@@ -47,8 +47,12 @@ static ClipVertex LerpClipVertex(
 
     out.clipPosition = a.clipPosition + (b.clipPosition - a.clipPosition) * t;
     out.color = a.color;
+    
     out.uv.x = a.uv.x + (b.uv.x - a.uv.x) * t;
     out.uv.y = a.uv.y + (b.uv.y - a.uv.y) * t;
+
+    out.worldPosition = a.worldPosition + (b.worldPosition - a.worldPosition) * t;
+    out.normal = a.normal + (b.normal - a.normal) * t;
 
     return out;
 }

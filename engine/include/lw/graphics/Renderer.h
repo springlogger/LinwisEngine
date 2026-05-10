@@ -35,7 +35,7 @@ private:
 
     void clearBuffer();
 
-    void renderMesh(const Mesh& mesh, const Camera& camera);
+    void renderMesh(const Mesh& mesh, const Camera& camera, const DirectionalLight* light);
     void renderLineSegments(const LineSegments& lineSegments, const Camera& camera);
 };
 

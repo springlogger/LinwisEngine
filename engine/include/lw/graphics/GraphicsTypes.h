@@ -1,6 +1,7 @@
 #pragma once
 
 #include <lw/math/Vector2.h>
+#include <lw/math/Vector3.h>
 #include <lw/math/Vector4.h>
 
 #include <cstdint>
@@ -13,6 +14,8 @@ struct ClipVertex
     Vector4 clipPosition;
     uint32_t color = 0;
     Vector2 uv;
+    Vector3 normal = Vector3(0.0f, 0.0f, 0.0f); // нормаль в мировом пространстве
+    Vector3 worldPosition  = Vector3(0.0f, 0.0f, 0.0f);
 };
 
 struct ClipTriangle
@@ -27,9 +30,13 @@ struct ScreenVertex
     float x = 0.0f;
     float y = 0.0f;
     float z = 0.0f;
-    float invW   = 0.0f;
-    float uOverW = 0.0f;
-    float vOverW = 0.0f;
+    
+    float invW    = 0.0f;
+    float uOverW  = 0.0f;
+    float vOverW  = 0.0f;
+
+    Vector3 worldPositionOverW = Vector3(0.0f, 0.0f, 0.0f);
+    Vector3 normalOverW = Vector3(0.0f, 0.0f, 0.0f);
 };
 
 struct ScreenTriangle

@@ -5,11 +5,74 @@
 
 #include <unordered_map>
 #include <fstream>
+#include <string>
 #include <vector>
 #include <cstdio>
 
 namespace lw
 {
+
+static void RecalculateSmoothNormals(
+    std::vector<MeshVertex>& vertices,
+    const std::vector<uint32_t>& indices,
+    const std::vector<int>& vertexPositionIndices,
+    std::size_t positionCount)
+{
+    std::vector<Vector3> accumulatedNormals(positionCount);
+
+    for (std::size_t i = 0; i + 2 < indices.size(); i += 3)
+    {
+        const uint32_t i0 = indices[i];
+        const uint32_t i1 = indices[i + 1];
+        const uint32_t i2 = indices[i + 2];
+
+        if (i0 >= vertices.size() ||
+            i1 >= vertices.size() ||
+            i2 >= vertices.size())
+        {
+            continue;
+        }
+
+        Vector3 faceNormal =
+            (vertices[i1].position - vertices[i0].position)
+                .cross(vertices[i2].position - vertices[i0].position);
+
+        if (faceNormal.isNearZero()) {
+            continue;
+        }
+
+        const Vector3 importedNormal = vertices[i0].normal;
+        if (!importedNormal.isNearZero() && faceNormal.dot(importedNormal) < 0.0f) {
+            faceNormal *= -1.0f;
+        }
+
+        const uint32_t triangleIndices[3] = { i0, i1, i2 };
+        for (uint32_t vertexIndex : triangleIndices)
+        {
+            const int positionIndex = vertexPositionIndices[vertexIndex];
+            if (positionIndex >= 0 &&
+                static_cast<std::size_t>(positionIndex) < accumulatedNormals.size())
+            {
+                accumulatedNormals[positionIndex] += faceNormal;
+            }
+        }
+    }
+
+    for (std::size_t i = 0; i < vertices.size(); ++i)
+    {
+        const int positionIndex = vertexPositionIndices[i];
+        if (positionIndex < 0 ||
+            static_cast<std::size_t>(positionIndex) >= accumulatedNormals.size())
+        {
+            continue;
+        }
+
+        const Vector3 normal = accumulatedNormals[positionIndex].normalized();
+        if (!normal.isNearZero()) {
+            vertices[i].normal = normal;
+        }
+    }
+}
 
 Mesh loadObj(const std::string& filename)
 {
@@ -26,6 +89,7 @@ Mesh loadObj(const std::string& filename)
 
     std::unordered_map<std::string, uint32_t> vertexCache;
     std::vector<MeshVertex> uniqueVertices;
+    std::vector<int> vertexPositionIndices;
     std::vector<uint32_t> indices;
 
     std::string line;
@@ -81,6 +145,7 @@ Mesh loadObj(const std::string& filename)
 
                     uint32_t newIndex = static_cast<uint32_t>(uniqueVertices.size());
                     uniqueVertices.push_back(vertex);
+                    vertexPositionIndices.push_back(posIdx > 0 ? posIdx - 1 : -1);
                     vertexCache[tokens[i]] = newIndex;
                     faceIndices[i] = newIndex;
                 }
@@ -99,6 +164,13 @@ Mesh loadObj(const std::string& filename)
             }
         }
     }
+
+    RecalculateSmoothNormals(
+        uniqueVertices,
+        indices,
+        vertexPositionIndices,
+        positions.size()
+    );
 
     MeshGeometry geometry;
     geometry.vertices = uniqueVertices;
