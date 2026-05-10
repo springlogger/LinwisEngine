@@ -10,7 +10,26 @@ static float SrgbToLinear(float c) {
     return c <= 0.04045f ? c / 12.92f : std::pow((c + 0.055f) / 1.055f, 2.4f);
 }
 
-uint32_t SampleTexture(const Texture& texture, float u, float v) {
+static float LinearToSrgb(float c)
+{
+    c = std::clamp(c, 0.0f, 1.0f);
+    return c <= 0.0031308f
+        ? c * 12.92f
+        : 1.055f * std::pow(c, 1.0f / 2.4f) - 0.055f;
+}
+
+static uint32_t PackLinearToSrgb(const Vector3& color)
+{
+    const auto u8 = [](float f) {
+        return static_cast<uint32_t>(std::clamp(f, 0.0f, 1.0f) * 255.0f + 0.5f) & 0xFF;
+    };
+
+    return (u8(LinearToSrgb(color.x)) << 16) |
+           (u8(LinearToSrgb(color.y)) << 8) |
+            u8(LinearToSrgb(color.z));
+}
+
+static Vector3 SampleTextureLinear(const Texture& texture, float u, float v) {
     u = std::clamp(u, 0.0f, 1.0f);
     v = std::clamp(v, 0.0f, 1.0f);
 
@@ -23,17 +42,11 @@ uint32_t SampleTexture(const Texture& texture, float u, float v) {
     float g = ((packed >>  8) & 0xFF) / 255.0f;
     float b = ((packed >> 16) & 0xFF) / 255.0f;
 
-    if (true) {
-        r = SrgbToLinear(r);
-        g = SrgbToLinear(g);
-        b = SrgbToLinear(b);
-    }
-
-    // Windows GDI BI_RGB 32-bit: в памяти [B, G, R, X] → uint32_t: 0x00RRGGBB
-    const auto u8 = [](float f) {
-        return static_cast<uint32_t>(std::clamp(f, 0.0f, 1.0f) * 255.0f + 0.5f) & 0xFF;
-    };
-    return (u8(r) << 16) | (u8(g) << 8) | u8(b);
+    return Vector3(
+        SrgbToLinear(r),
+        SrgbToLinear(g),
+        SrgbToLinear(b)
+    );
 }
 
 // векторное AB * AP
@@ -125,8 +138,8 @@ static void DrawFilledTriangle(
                 v1.worldPositionOverW * beta +
                 v2.worldPositionOverW * gamma) / interpInvW;
 
-            const uint32_t pixelTextureColor = SampleTexture(texture, u, v);
-            const uint32_t pixelColor = light
+            const Vector3 pixelTextureColor = SampleTextureLinear(texture, u, v);
+            const Vector3 pixelColorLinear = light
                 ? light->applyLight(cameraPosition, worldPosition, interpolatedNormal, pixelTextureColor)
                 : pixelTextureColor;
 
@@ -134,7 +147,7 @@ static void DrawFilledTriangle(
             if (depth < renderTarget.depth.At(x, y))
             {
                 renderTarget.depth.At(x, y) = depth;
-                renderTarget.color.PutPixel(x, y, pixelColor);
+                renderTarget.color.PutPixel(x, y, PackLinearToSrgb(pixelColorLinear));
             }
         }
     }

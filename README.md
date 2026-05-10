@@ -101,7 +101,17 @@ specular   = pow(max(0, dot(normal, halfDir)), shininess) * specularStrength
 halfDir    = normalize(lightDir + viewDir)
 ```
 
+Texture sampling follows the usual color-space path for sRGB assets:
+
+```text
+texture sRGB -> linear color -> lighting in linear space -> output sRGB
+```
+
+The framebuffer still stores packed `0x00RRGGBB` colors, but lighting is applied before the final linear-to-sRGB packing step.
+
 OBJ loading also recalculates smooth normals by shared vertex position. This makes models exported with flat shading, such as Suzanne with `s 0`, respond to per-pixel lighting as a smooth surface instead of lighting only a few individual faces.
+
+Procedural cube geometry is generated with 24 vertices, one set per face, so each side keeps its own hard-edge normal and UV range. That keeps cubes visually sharp under lighting instead of smoothing them like a sphere.
 
 See `docs/lighting_notes.md` for the full lighting writeup: formulas, implementation details, coordinate-space rules, model-normal pitfalls, point/spot light extensions, gamma notes, and debugging checklists.
 
@@ -136,6 +146,17 @@ Textures can be assigned after mesh creation with `Mesh::setTexture(...)`, or di
 ```cpp
 lw::Mesh* mesh = scene.addObject(
     lw::loadObj(lw::assetPath("suzane.obj"), lw::assetPath("test_texture.png"))
+);
+```
+
+Procedural geometry can be used directly to create meshes:
+
+```cpp
+lw::Mesh* cube = scene.addObject(
+    lw::Mesh(
+        lw::createCubeGeometry(1.5f, 1.5f, 1.5f),
+        lw::Material(lw::assetPath("test_texture.png"))
+    )
 );
 ```
 

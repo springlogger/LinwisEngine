@@ -17,14 +17,10 @@ public:
     float specularStrength = 0.5f;
     float shininess = 32.0f;
 
-    static uint32_t AddSpecular(uint32_t baseColor, uint32_t lightColor, float specular);
-
-    static uint32_t MultiplyColor(uint32_t color, float factor);
-
     /*
-    * pixelColor = texturePixelColor or pixelColorWithoutLight
+    * pixelColorLinear = texture pixel color converted from sRGB to linear.
     */
-    uint32_t applyLight(const Vector3& cameraPosition, const Vector3& worldPosition,  const Vector3& normal, uint32_t pixelColor) const;
+    Vector3 applyLight(const Vector3& cameraPosition, const Vector3& worldPosition,  const Vector3& normal, const Vector3& pixelColorLinear) const;
 };
 
 

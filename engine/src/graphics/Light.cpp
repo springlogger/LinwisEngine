@@ -2,71 +2,76 @@
 
 namespace lw
 {
-    uint32_t DirectionalLight::AddSpecular(uint32_t baseColor, uint32_t lightColor, float specular)
-    {
-        auto add = [specular](uint32_t base, uint32_t light) {
-            float value = static_cast<float>(base) +
-                        static_cast<float>(light) * specular;
 
-            return static_cast<uint32_t>(
-                std::clamp(value, 0.0f, 255.0f)
-            );
-        };
+static float SrgbToLinear(float c)
+{
+    return c <= 0.04045f
+        ? c / 12.92f
+        : std::pow((c + 0.055f) / 1.055f, 2.4f);
+}
 
-        uint32_t br = (baseColor >> 16) & 0xFF;
-        uint32_t bg = (baseColor >> 8) & 0xFF;
-        uint32_t bb = baseColor & 0xFF;
+static Vector3 UnpackSrgbColor(uint32_t color)
+{
+    const float r = static_cast<float>((color >> 16) & 0xFF) / 255.0f;
+    const float g = static_cast<float>((color >> 8) & 0xFF) / 255.0f;
+    const float b = static_cast<float>(color & 0xFF) / 255.0f;
 
-        uint32_t lr = (lightColor >> 16) & 0xFF;
-        uint32_t lg = (lightColor >> 8) & 0xFF;
-        uint32_t lb = lightColor & 0xFF;
+    return Vector3(
+        SrgbToLinear(r),
+        SrgbToLinear(g),
+        SrgbToLinear(b)
+    );
+}
 
-        return (add(br, lr) << 16) |
-            (add(bg, lg) << 8) |
-                add(bb, lb);
+static Vector3 MultiplyColors(const Vector3& a, const Vector3& b)
+{
+    return Vector3(
+        a.x * b.x,
+        a.y * b.y,
+        a.z * b.z
+    );
+}
+
+static Vector3 ClampColor(const Vector3& color)
+{
+    return Vector3(
+        std::clamp(color.x, 0.0f, 1.0f),
+        std::clamp(color.y, 0.0f, 1.0f),
+        std::clamp(color.z, 0.0f, 1.0f)
+    );
+}
+
+/*
+* pixelColorLinear = texture pixel color converted from sRGB to linear.
+*/
+Vector3 DirectionalLight::applyLight(
+    const Vector3& cameraPosition,
+    const Vector3& worldPosition,
+    const Vector3& normal,
+    const Vector3& pixelColorLinear) const
+{
+    const Vector3 lightDir = (direction * -1.0f).normalized();
+    const Vector3 viewDir = (cameraPosition - worldPosition).normalized();
+    const Vector3 halfDir = (lightDir + viewDir).normalized();
+    const Vector3 lightColorLinear = UnpackSrgbColor(lightColor);
+
+    const float diffuse = std::max(0.0f, normal.dot(lightDir));
+
+    float specular = 0.0f;
+    if (diffuse > 0.0f) {
+        specular = std::pow(
+            std::max(0.0f, normal.dot(halfDir)),
+            shininess
+        ) * specularStrength;
     }
 
-    uint32_t DirectionalLight::MultiplyColor(uint32_t color, float factor)
-    {
-        auto scale = [factor](uint32_t c) {
-            return static_cast<uint32_t>(
-                std::clamp(c * factor, 0.0f, 255.0f)
-            );
-        };
+    const Vector3 ambientColor = pixelColorLinear * ambient;
+    const Vector3 diffuseColor =
+        MultiplyColors(pixelColorLinear, lightColorLinear) *
+        (diffuse * diffuseStrength);
+    const Vector3 specularColor = lightColorLinear * specular;
 
-        uint32_t r = (color >> 16) & 0xFF;
-        uint32_t g = (color >> 8) & 0xFF;
-        uint32_t b = color & 0xFF;
+    return ClampColor(ambientColor + diffuseColor + specularColor);
+}
 
-        return (scale(r) << 16) | (scale(g) << 8) | scale(b);
-    }
-
-    /*
-    * pixelColor = texturePixelColor or pixelColorWithoutLight
-    */
-    uint32_t DirectionalLight::applyLight(const Vector3& cameraPosition, const Vector3& worldPosition,  const Vector3& normal, uint32_t pixelColor) const {
-        Vector3 lightDir = (direction * -1.0f).normalized();
-        Vector3 viewDir = (cameraPosition - worldPosition).normalized();
-        Vector3 halfDir = (lightDir + viewDir).normalized();
-
-        float diffuse = std::max(0.0f, normal.dot(lightDir));
-        float specular = 0.0f;
-        if (diffuse > 0.0f) {
-            specular = std::pow(
-                std::max(0.0f, normal.dot(halfDir)),
-                shininess
-            ) * specularStrength;
-        }
-
-        float lighting = std::clamp(
-            ambient + diffuse * diffuseStrength,
-            0.0f,
-            1.0f
-        );
-
-        uint32_t litDiffuseColor = MultiplyColor(pixelColor, lighting);
-        uint32_t finalColor = AddSpecular(litDiffuseColor, lightColor, specular);
-
-        return finalColor;
-    }
 } // namespace lw
